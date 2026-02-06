@@ -315,14 +315,24 @@ strong {
     align-items: flex-start;
     gap: 10px;
     margin: 8px 0;
+    cursor: text; 
 }
+
 .checkbox-item input[type="checkbox"] {
     margin-top: 4px;
     width: 18px;
     height: 18px;
     cursor: pointer;
     accent-color: #FF9800;
+    pointer-events: auto; 
 }
+
+.checkbox-item span {
+    user-select: text; 
+    -webkit-user-select: text;
+    -moz-user-select: text;
+}
+
 .checkbox-item.checked {
     opacity: 0.6;
     text-decoration: line-through;

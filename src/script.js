@@ -166,7 +166,6 @@ class TodoApp {
                 const toolbar = document.getElementById('toolbar');
                 toolbar.classList.toggle('show', this.activeContainer !== null);
             }
-
             handleToolbarAction(action) {
                 if (!this.activeContainer) return;
                 
@@ -179,15 +178,45 @@ class TodoApp {
                     document.execCommand('bold', false, null);
                     this.updateContainer(this.activeContainer, 'content', contentElement.innerHTML);
                 } else if (action === 'checkbox') {
+                    const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+                    if (range) {
+                        const isInContent = contentElement.contains(range.commonAncestorContainer);
+                        
+                        if (!isInContent) {
+                            return;
+                        }
+                    }
+                    
                     if (selectedText) {
-                        this.addCheckboxToSelection(contentElement, selection);
+                        let node = range.commonAncestorContainer;
+                        let parentCheckbox = null;
+                        
+                        while (node && node !== contentElement) {
+                            if (node.nodeType === 1 && node.classList && node.classList.contains('checkbox-item')) {
+                                parentCheckbox = node;
+                                break;
+                            }
+                            node = node.parentNode;
+                        }
+                        
+                        if (parentCheckbox) {
+                            this.removeCheckbox(parentCheckbox, contentElement);
+                        } else {
+                            this.addCheckboxToSelection(contentElement, selection);
+                        }
                     } else {
                         this.addCheckboxes(contentElement);
                     }
                     this.updateContainer(this.activeContainer, 'content', contentElement.innerHTML);
                 }
             }
-
+            removeCheckbox(checkboxItem, contentElement) {
+                    const text = checkboxItem.querySelector('span')?.textContent || '';
+                    const textNode = document.createTextNode(text);
+                    checkboxItem.parentNode.replaceChild(textNode, checkboxItem);
+                    
+                    this.attachCheckboxListeners(contentElement, this.activeContainer);
+            }
             addCheckboxToSelection(element, selection) {
                 const range = selection.getRangeAt(0);
                 const selectedText = selection.toString().trim();
@@ -199,7 +228,9 @@ class TodoApp {
                 
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
+                checkbox.setAttribute('contenteditable', 'false'); 
                 checkbox.addEventListener('change', (e) => {
+                    e.stopPropagation();
                     div.classList.toggle('checked', e.target.checked);
                     this.updateContainer(this.activeContainer, 'content', element.innerHTML);
                 });
@@ -215,7 +246,7 @@ class TodoApp {
                 
                 selection.removeAllRanges();
             }
-
+            
             addCheckboxes(element) {
                 const lines = element.innerText.split('\n').filter(line => line.trim());
                 if (lines.length === 0) return;
@@ -227,7 +258,9 @@ class TodoApp {
                     
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
+                    checkbox.setAttribute('contenteditable', 'false');
                     checkbox.addEventListener('change', (e) => {
+                        e.stopPropagation();
                         div.classList.toggle('checked', e.target.checked);
                         this.updateContainer(this.activeContainer, 'content', element.innerHTML);
                     });
@@ -240,7 +273,6 @@ class TodoApp {
                     element.appendChild(div);
                 });
             }
-
             render() {
                 const wrapper = document.getElementById('containersWrapper');
                 const overlay = document.getElementById('overlay');
@@ -281,6 +313,8 @@ class TodoApp {
                     content.contentEditable = container.expanded;
                     content.innerHTML = container.content;
                     
+                    this.attachCheckboxListeners(content, container.id);
+                    
                     if (!container.expanded) {
                         div.addEventListener('mousedown', (e) => {
                             this.handlePressStart(container.id, e);
@@ -312,13 +346,40 @@ class TodoApp {
                     div.appendChild(content);
                     wrapper.appendChild(div);
                 });
-            }
-
+            }            
             updateEmptyState() {
                 const emptyState = document.querySelector('.empty-state');
                 emptyState.classList.toggle('hidden', this.containers.length > 0);
             }
 
+            attachCheckboxListeners(element, containerId) {
+                const checkboxes = element.querySelectorAll('input[type="checkbox"]');
+                checkboxes.forEach(checkbox => {
+                    const parentDiv = checkbox.closest('.checkbox-item');
+                    
+                    if (parentDiv && parentDiv.classList.contains('checked')) {
+                        checkbox.checked = true;
+                    }
+                    
+                    checkbox.setAttribute('contenteditable', 'false');
+                    
+                    checkbox.addEventListener('mousedown', (e) => {
+                        e.stopPropagation();
+                    });
+                    
+                    checkbox.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                    });
+                    
+                    checkbox.addEventListener('change', (e) => {
+                        e.stopPropagation();
+                        if (parentDiv) {
+                            parentDiv.classList.toggle('checked', e.target.checked);
+                        }
+                        this.updateContainer(containerId, 'content', element.innerHTML);
+                    });
+                });
+            }
             saveToStorage() {
                 localStorage.setItem('todoContainers', JSON.stringify(this.containers));
             }
