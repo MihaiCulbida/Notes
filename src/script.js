@@ -1,0 +1,340 @@
+class TodoApp {
+            constructor() {
+                this.containers = [];
+                this.activeContainer = null;
+                this.selectedContainer = null;
+                this.pressTimer = null;
+                this.init();
+            }
+
+            init() {
+                this.loadFromStorage();
+                this.setupEventListeners();
+                this.render();
+                this.updateEmptyState();
+            }
+
+            setupEventListeners() {
+                document.getElementById('addButton').addEventListener('click', () => this.addContainer());
+                
+                document.getElementById('deleteButton').addEventListener('click', () => {
+                    if (this.selectedContainer) {
+                        this.showConfirmDialog();
+                    }
+                });
+
+                document.getElementById('confirmYes').addEventListener('click', () => {
+                    this.deleteContainer(this.selectedContainer);
+                    this.hideConfirmDialog();
+                });
+
+                document.getElementById('confirmNo').addEventListener('click', () => {
+                    this.hideConfirmDialog();
+                });
+                
+                document.getElementById('overlay').addEventListener('click', () => {
+                    if (this.activeContainer) {
+                        this.collapseAll();
+                        this.render();
+                    } else {
+                        this.hideConfirmDialog();
+                    }
+                });
+
+                document.getElementById('toolbar').addEventListener('click', (e) => {
+                    const btn = e.target.closest('.toolbar-btn');
+                    if (btn && this.activeContainer) {
+                        this.handleToolbarAction(btn.dataset.action);
+                    }
+                });
+            }
+
+            addContainer() {
+                const container = {
+                    id: Date.now(),
+                    title: '',
+                    content: '',
+                    expanded: false
+                };
+                this.containers.push(container);
+                this.saveToStorage();
+                this.render();
+                this.updateEmptyState();
+            }
+
+            handlePressStart(id, event) {
+                event.preventDefault();
+                this.pressTimer = setTimeout(() => {
+                    this.selectContainer(id);
+                }, 500);
+            }
+
+            handlePressEnd(id, event) {
+                clearTimeout(this.pressTimer);
+                
+                if (!this.selectedContainer || this.selectedContainer !== id) {
+                    setTimeout(() => {
+                        if (!this.selectedContainer || this.selectedContainer !== id) {
+                            this.expandContainer(id);
+                        }
+                    }, 50);
+                }
+            }
+
+            selectContainer(id) {
+                if (this.selectedContainer === id) {
+                    this.selectedContainer = null;
+                } else {
+                    this.selectedContainer = id;
+                }
+                
+                this.updateDeleteButton();
+                this.render();
+            }
+
+            expandContainer(id) {
+                this.collapseAll();
+                this.selectedContainer = null;
+                const container = this.containers.find(c => c.id === id);
+                if (container) {
+                    container.expanded = true;
+                    this.activeContainer = id;
+                    this.render();
+                    this.updateDeleteButton();
+                    this.updateToolbar();
+                    
+                    setTimeout(() => {
+                        const element = document.querySelector(`[data-id="${id}"] .container-content`);
+                        if (element) {
+                            element.focus();
+                        }
+                    }, 100);
+                }
+            }
+
+            collapseAll() {
+                this.containers.forEach(c => c.expanded = false);
+                this.activeContainer = null;
+                this.updateToolbar();
+            }
+
+            closeContainer(id) {
+                const container = this.containers.find(c => c.id === id);
+                if (container) {
+                    container.expanded = false;
+                    this.activeContainer = null;
+                    this.render();
+                    this.updateToolbar();
+                }
+            }
+
+            deleteContainer(id) {
+                this.containers = this.containers.filter(c => c.id !== id);
+                this.selectedContainer = null;
+                this.saveToStorage();
+                this.render();
+                this.updateEmptyState();
+                this.updateDeleteButton();
+            }
+
+            showConfirmDialog() {
+                document.getElementById('confirmDialog').classList.add('show');
+                document.getElementById('overlay').classList.add('show');
+            }
+
+            hideConfirmDialog() {
+                document.getElementById('confirmDialog').classList.remove('show');
+                if (!this.activeContainer) {
+                    document.getElementById('overlay').classList.remove('show');
+                }
+            }
+
+            updateContainer(id, field, content) {
+                const container = this.containers.find(c => c.id === id);
+                if (container) {
+                    container[field] = content;
+                    this.saveToStorage();
+                }
+            }
+
+            updateDeleteButton() {
+                const deleteBtn = document.getElementById('deleteButton');
+                deleteBtn.classList.toggle('active', this.selectedContainer !== null);
+            }
+
+            updateToolbar() {
+                const toolbar = document.getElementById('toolbar');
+                toolbar.classList.toggle('show', this.activeContainer !== null);
+            }
+
+            handleToolbarAction(action) {
+                if (!this.activeContainer) return;
+                
+                const containerElement = document.querySelector(`[data-id="${this.activeContainer}"]`);
+                const contentElement = containerElement.querySelector('.container-content');
+                const selection = window.getSelection();
+                const selectedText = selection.toString();
+                
+                if (action === 'bold' && selectedText) {
+                    document.execCommand('bold', false, null);
+                    this.updateContainer(this.activeContainer, 'content', contentElement.innerHTML);
+                } else if (action === 'checkbox') {
+                    if (selectedText) {
+                        this.addCheckboxToSelection(contentElement, selection);
+                    } else {
+                        this.addCheckboxes(contentElement);
+                    }
+                    this.updateContainer(this.activeContainer, 'content', contentElement.innerHTML);
+                }
+            }
+
+            addCheckboxToSelection(element, selection) {
+                const range = selection.getRangeAt(0);
+                const selectedText = selection.toString().trim();
+                
+                if (!selectedText) return;
+                
+                const div = document.createElement('div');
+                div.className = 'checkbox-item';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.addEventListener('change', (e) => {
+                    div.classList.toggle('checked', e.target.checked);
+                    this.updateContainer(this.activeContainer, 'content', element.innerHTML);
+                });
+                
+                const label = document.createElement('span');
+                label.textContent = selectedText;
+                
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                
+                range.deleteContents();
+                range.insertNode(div);
+                
+                selection.removeAllRanges();
+            }
+
+            addCheckboxes(element) {
+                const lines = element.innerText.split('\n').filter(line => line.trim());
+                if (lines.length === 0) return;
+                
+                element.innerHTML = '';
+                lines.forEach(line => {
+                    const div = document.createElement('div');
+                    div.className = 'checkbox-item';
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.addEventListener('change', (e) => {
+                        div.classList.toggle('checked', e.target.checked);
+                        this.updateContainer(this.activeContainer, 'content', element.innerHTML);
+                    });
+                    
+                    const label = document.createElement('span');
+                    label.textContent = line.trim();
+                    
+                    div.appendChild(checkbox);
+                    div.appendChild(label);
+                    element.appendChild(div);
+                });
+            }
+
+            render() {
+                const wrapper = document.getElementById('containersWrapper');
+                const overlay = document.getElementById('overlay');
+                wrapper.innerHTML = '';
+                
+                const hasExpanded = this.containers.some(c => c.expanded);
+                overlay.classList.toggle('show', hasExpanded);
+                
+                this.containers.forEach((container, index) => {
+                    const div = document.createElement('div');
+                    const isSelected = this.selectedContainer === container.id;
+                    div.className = `container ${container.expanded ? 'expanded' : ''} ${isSelected ? 'selected' : ''} ${index === this.containers.length - 1 && !container.expanded ? 'new' : ''}`;
+                    div.dataset.id = container.id;
+                    
+                    const closeBtn = document.createElement('button');
+                    closeBtn.className = 'close-btn';
+                    closeBtn.innerHTML = '×';
+                    closeBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.closeContainer(container.id);
+                    });
+                    
+                    const title = document.createElement('div');
+                    title.className = 'container-title';
+                    title.contentEditable = true;
+                    title.textContent = container.title;
+                    
+                    title.addEventListener('input', () => {
+                        this.updateContainer(container.id, 'title', title.textContent);
+                    });
+                    
+                    title.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                    });
+                    
+                    const content = document.createElement('div');
+                    content.className = 'container-content';
+                    content.contentEditable = container.expanded;
+                    content.innerHTML = container.content;
+                    
+                    if (!container.expanded) {
+                        div.addEventListener('mousedown', (e) => {
+                            this.handlePressStart(container.id, e);
+                        });
+                        
+                        div.addEventListener('mouseup', (e) => {
+                            this.handlePressEnd(container.id, e);
+                        });
+                        
+                        div.addEventListener('mouseleave', () => {
+                            clearTimeout(this.pressTimer);
+                        });
+                        
+                        div.addEventListener('touchstart', (e) => {
+                            this.handlePressStart(container.id, e);
+                        });
+                        
+                        div.addEventListener('touchend', (e) => {
+                            this.handlePressEnd(container.id, e);
+                        });
+                    }
+                    
+                    content.addEventListener('input', () => {
+                        this.updateContainer(container.id, 'content', content.innerHTML);
+                    });
+                    
+                    div.appendChild(closeBtn);
+                    div.appendChild(title);
+                    div.appendChild(content);
+                    wrapper.appendChild(div);
+                });
+            }
+
+            updateEmptyState() {
+                const emptyState = document.querySelector('.empty-state');
+                emptyState.classList.toggle('hidden', this.containers.length > 0);
+            }
+
+            saveToStorage() {
+                localStorage.setItem('todoContainers', JSON.stringify(this.containers));
+            }
+
+            loadFromStorage() {
+                const saved = localStorage.getItem('todoContainers');
+                if (saved) {
+                    this.containers = JSON.parse(saved);
+                    this.containers.forEach(c => {
+                        c.expanded = false;
+                        if (!c.hasOwnProperty('title')) {
+                            c.title = '';
+                        }
+                    });
+                }
+            }
+        }
+
+    const app = new TodoApp();

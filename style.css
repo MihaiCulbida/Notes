@@ -1,0 +1,351 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(135deg, #FFFDF5 0%, #FFF9E6 50%, #FFF4D0 100%);
+    min-height: 100vh;
+    padding: 40px 20px;
+    position: relative;
+}
+.empty-state {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 28px;
+    color: rgba(200, 120, 80, 0.15);
+    font-weight: 300;
+    pointer-events: none;
+    text-align: center;
+    transition: opacity 0.3s ease;
+}
+.empty-state.hidden {
+    opacity: 0;
+}
+.containers-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding-bottom: 100px;
+}
+.container {
+    background: linear-gradient(135deg, #FFFEF8 0%, #FFFBF0 100%);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(230, 200, 120, 0.15);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    width: 220px;
+    height: 280px;
+    border: 2px solid transparent;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.container:hover {
+    box-shadow: 0 6px 28px rgba(230, 200, 120, 0.25);
+    transform: translateY(-2px);
+    border-color: rgba(255, 215, 100, 0.4);
+}
+.container.expanded {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 800px;
+    height: 85vh;
+    z-index: 2500;
+    cursor: default;
+    overflow-y: auto;
+}
+.container.expanded:hover {
+    transform: translate(-50%, -50%);
+}
+.container-title {
+    outline: none;
+    font-size: 20px;
+    font-weight: 600;
+    color: #5D4C37;
+    min-height: 28px;
+    flex-shrink: 0;
+}
+.container:not(.expanded) .container-title {
+    opacity: 0.9;
+}
+.container-title:empty:before {
+    content: 'Title';
+    color: rgba(200, 170, 100, 0.5);
+    font-weight: 500;
+}
+.container-content {
+    outline: none;
+    min-height: 20px;
+    font-size: 16px;
+    line-height: 1.6;
+    color: #5D4037;
+    flex: 1;
+    overflow: hidden;
+}
+.container.expanded .container-content {
+    overflow-y: auto;
+}
+.container:not(.expanded) .container-content {
+    opacity: 0.25;
+    pointer-events: none;
+    text-overflow: ellipsis;
+}
+.container-content:empty:before {
+    content: 'Start writing...';
+    color: rgba(200, 170, 100, 0.4);
+}
+.add-button {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #FFC947 0%, #FFA000 100%);
+    border: none;
+    color: white;
+    font-size: 32px;
+    cursor: pointer;
+    box-shadow: 0 6px 24px rgba(255, 160, 0, 0.4);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+.add-button:hover {
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: 0 8px 32px rgba(255, 160, 0, 0.5);
+}
+.add-button:active {
+    transform: scale(0.95) rotate(90deg);
+}
+.delete-button {
+    position: fixed;
+    bottom: 30px;
+    right: 110px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid rgba(230, 200, 120, 0.4);
+    color: #6D5C41;
+    font-size: 28px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(230, 200, 120, 0.25);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0.5;
+    pointer-events: none;
+}
+.delete-button.active {
+    opacity: 1;
+    pointer-events: all;
+}
+.delete-button.active:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 24px rgba(230, 200, 120, 0.4);
+    border-color: rgba(255, 160, 0, 0.6);
+}
+.delete-button.active:active {
+    transform: scale(0.95);
+}
+#deleteImage {
+    width: 30px;
+    height: 30px;
+}
+.container.selected {
+    border-color: #FFA000;
+    box-shadow: 0 6px 28px rgba(255, 160, 0, 0.35);
+}
+.toolbar {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #FFFEF8 0%, #FFFBF0 100%);
+    border-radius: 50px;
+    box-shadow: 0 8px 32px rgba(230, 200, 120, 0.3);
+    padding: 12px 24px;
+    display: none;
+    gap: 8px;
+    z-index: 3000;
+    border: 2px solid rgba(255, 215, 100, 0.3);
+}
+.toolbar.show {
+    display: flex;
+}
+.toolbar-btn {
+    padding: 10px 18px;
+    cursor: pointer;
+    border-radius: 25px;
+    transition: all 0.2s;
+    color: #6D5C41;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    background: transparent;
+    font-weight: 500;
+}
+.toolbar-btn:hover {
+    background: linear-gradient(135deg, #FFF9E6 0%, #FFF0C8 100%);
+}
+.toolbar-btn .icon {
+    font-weight: bold;
+    color: #FFA000;
+    font-size: 16px;
+}
+.close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #FFE9B3 0%, #FFD88A 100%);
+    border: none;
+    color: #6D5C41;
+    font-size: 20px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    z-index: 10;
+}
+.container.expanded .close-btn {
+    display: flex;
+}
+.close-btn:hover {
+    background: linear-gradient(135deg, #FFD88A 0%, #FFC966 100%);
+    transform: scale(1.1);
+}
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 2000;
+    display: none;
+}
+.overlay.show {
+    display: block;
+}
+.confirm-dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #FFFEF8 0%, #FFFBF0 100%);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
+    z-index: 3500;
+    display: none;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 320px;
+    border: 2px solid rgba(255, 215, 100, 0.4);
+}
+.confirm-dialog.show {
+    display: flex;
+}
+.confirm-dialog-text {
+    color: #5D4C37;
+    font-size: 18px;
+    text-align: center;
+    font-weight: 500;
+}
+.confirm-dialog-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+.confirm-btn {
+    padding: 12px 24px;
+    border-radius: 12px;
+    border: none;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.confirm-btn-yes {
+    background: linear-gradient(135deg, #FFA000 0%, #FF8F00 100%);
+    color: white;
+}
+.confirm-btn-yes:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(255, 160, 0, 0.4);
+}
+.confirm-btn-no {
+    background: white;
+    color: #6D5C41;
+    border: 2px solid rgba(230, 200, 120, 0.4);
+}
+.confirm-btn-no:hover {
+    background: #FFF9E6;
+    border-color: rgba(255, 160, 0, 0.5);
+}
+strong {
+    font-weight: 600;
+    color: #4E342E;
+}
+.checkbox-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 8px 0;
+}
+.checkbox-item input[type="checkbox"] {
+    margin-top: 4px;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #FF9800;
+}
+.checkbox-item.checked {
+    opacity: 0.6;
+    text-decoration: line-through;
+}
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.container.new {
+    animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.container-content p {
+    margin: 8px 0;
+}
+.container-content p:first-child {
+    margin-top: 0;
+}
+.container-content p:last-child {
+    margin-bottom: 0;
+}

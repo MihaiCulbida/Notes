@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="empty-state">Your list is empty</div>
+    <div class="overlay" id="overlay"></div>
+    <div class="containers-wrapper" id="containersWrapper"></div>
+    
+    <div class="toolbar" id="toolbar">
+        <button class="toolbar-btn" data-action="bold">
+            <span class="icon">B</span>
+            <span>Bold</span>
+        </button>
+        <button class="toolbar-btn" data-action="checkbox">
+            <span class="icon">☑</span>
+            <span>Checkbox</span>
+        </button>
+    </div>
+    
+    <button class="delete-button" id="deleteButton">
+        <img src="img/delete.png" id="deleteImage">
+    </button>
+    <button class="add-button" id="addButton">+</button>
+
+    <div class="confirm-dialog" id="confirmDialog">
+        <div class="confirm-dialog-text">Are you sure you want to delete this container?</div>
+        <div class="confirm-dialog-buttons">
+            <button class="confirm-btn confirm-btn-no" id="confirmNo">No</button>
+            <button class="confirm-btn confirm-btn-yes" id="confirmYes">Yes</button>
+        </div>
+    </div>
+
+    <script src="src/script.js"></script>
+</body>
+</html>
