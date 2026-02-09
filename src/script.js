@@ -190,6 +190,9 @@ class TodoApp {
                 
                 const bullets = temp.querySelectorAll('.bullet-point');
                 bullets.forEach(bullet => bullet.remove());
+
+                const numbers = temp.querySelectorAll('.number-point');
+                numbers.forEach(number => number.remove());
                 
                 const checkboxes = temp.querySelectorAll('input[type="checkbox"]');
                 checkboxes.forEach(checkbox => checkbox.remove());
@@ -370,6 +373,37 @@ class TodoApp {
                     }
                 } else {
                     this.addBullets(contentElement);
+                }
+                this.updateContainer(this.activeContainer, 'content', contentElement.innerHTML);
+            } else if (action === 'numberlist') {
+                const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+                if (range) {
+                    const isInContent = contentElement.contains(range.commonAncestorContainer);
+                    
+                    if (!isInContent) {
+                        return;
+                    }
+                }
+                
+                if (selectedText) {
+                    let node = range.commonAncestorContainer;
+                    let parentNumber = null;
+                    
+                    while (node && node !== contentElement) {
+                        if (node.nodeType === 1 && node.classList && node.classList.contains('number-item')) {
+                            parentNumber = node;
+                            break;
+                        }
+                        node = node.parentNode;
+                    }
+                    
+                    if (parentNumber) {
+                        this.removeNumber(parentNumber, contentElement);
+                    } else {
+                        this.addNumberToSelection(contentElement, selection);
+                    }
+                } else {
+                    this.addNumbers(contentElement);
                 }
                 this.updateContainer(this.activeContainer, 'content', contentElement.innerHTML);
             }
@@ -609,10 +643,350 @@ class TodoApp {
                                  selection.addRange(newRange);
                              }
                          }
-                     }
-                 });
-             }
-
+                        }
+                    });
+                }
+                removeNumber(numberItem, contentElement) {
+                    const span = numberItem.querySelector('span:last-child');
+                    if (!span) return;
+                    
+                    const textContent = span.textContent || span.innerText;
+                    const textNode = document.createTextNode(textContent);
+                    
+                    const br = document.createElement('br');
+                    
+                    const parent = numberItem.parentNode;
+                    parent.insertBefore(textNode, numberItem);
+                    parent.insertBefore(br, numberItem);
+                    
+                    numberItem.remove();
+                    
+                    this.renumberList(contentElement);
+                }
+                
+                renumberList(element) {
+                    const numberItems = element.querySelectorAll('.number-item');
+                    numberItems.forEach((item, index) => {
+                        const numberPoint = item.querySelector('.number-point');
+                        if (numberPoint) {
+                            numberPoint.textContent = `${index + 1}.`;
+                        }
+                    });
+                }
+                
+                addNumberToSelection(element, selection) {
+                    const range = selection.getRangeAt(0);
+                    let selectedText = selection.toString().trim();
+                    
+                    if (!selectedText) {
+                        const div = document.createElement('div');
+                        div.className = 'number-item';
+                        
+                        const existingNumbers = element.querySelectorAll('.number-item').length;
+                        
+                        const number = document.createElement('span');
+                        number.className = 'number-point';
+                        number.textContent = `${existingNumbers + 1}.`;
+                        number.setAttribute('contenteditable', 'false');
+                        
+                        const label = document.createElement('span');
+                        label.innerHTML = '<br>';
+                        
+                        div.appendChild(number);
+                        div.appendChild(label);
+                        
+                        range.insertNode(div);
+                        
+                        const newRange = document.createRange();
+                        newRange.setStart(label, 0);
+                        newRange.collapse(true);
+                        selection.removeAllRanges();
+                        selection.addRange(newRange);
+                        
+                        this.renumberList(element);
+                        return;
+                    }
+                    
+                    selectedText = selectedText.replace(/^\d+\.\s*/gm, '').trim();
+                    
+                    const startContainer = range.startContainer;
+                    const endContainer = range.endContainer;
+                    
+                    let startNode = startContainer.nodeType === 3 ? startContainer.parentNode : startContainer;
+                    if (startNode.classList && startNode.classList.contains('number-point')) {
+                        return;
+                    }
+                    
+                    let endNode = endContainer.nodeType === 3 ? endContainer.parentNode : endContainer;
+                    if (endNode.classList && endNode.classList.contains('number-point')) {
+                        return;
+                    }
+                    
+                    const itemsToRemove = [];
+                    const allItems = element.querySelectorAll('.checkbox-item, .bullet-item, .number-item');
+                    
+                    allItems.forEach(item => {
+                        if (range.intersectsNode(item)) {
+                            const label = item.querySelector('span:last-child');
+                            if (label && range.intersectsNode(label)) {
+                                itemsToRemove.push(item);
+                            }
+                        }
+                    });
+                    
+                    if (itemsToRemove.length > 0) {
+                        const allAreNumbers = itemsToRemove.every(item => item.classList.contains('number-item'));
+                        
+                        if (allAreNumbers) {
+                            itemsToRemove.forEach(item => {
+                                this.removeNumber(item, element);
+                            });
+                            return;
+                        }
+                        
+                        const lines = selectedText.split('\n').filter(line => line.trim());
+                        
+                        let insertPosition = itemsToRemove[0];
+                        const parent = insertPosition.parentNode;
+                        
+                        const existingNumbersBefore = Array.from(element.querySelectorAll('.number-item'))
+                            .filter(item => item.compareDocumentPosition(insertPosition) & Node.DOCUMENT_POSITION_FOLLOWING);
+                        const startNumber = existingNumbersBefore.length + 1;
+                        
+                        itemsToRemove.forEach((item, index) => {
+                            const next = item.nextSibling;
+                            const lineText = lines[index] ? lines[index].trim() : '';
+                            
+                            const div = document.createElement('div');
+                            div.className = 'number-item';
+                            
+                            const number = document.createElement('span');
+                            number.className = 'number-point';
+                            number.textContent = `${startNumber + index}.`;
+                            number.setAttribute('contenteditable', 'false');
+                            
+                            const label = document.createElement('span');
+                            label.textContent = lineText;
+                            
+                            div.appendChild(number);
+                            div.appendChild(label);
+                            
+                            parent.replaceChild(div, item);
+                            
+                            if (next && next.nodeType === 3 && next.textContent.trim() === '') {
+                                next.remove();
+                            }
+                        });
+                        
+                        this.renumberList(element);
+                    } else {
+                        range.deleteContents();
+                        
+                        const lines = selectedText.split('\n').filter(line => line.trim());
+                        const fragment = document.createDocumentFragment();
+                        
+                        const existingNumbers = element.querySelectorAll('.number-item').length;
+                        const startNumber = existingNumbers + 1;
+                        
+                        lines.forEach((line, index) => {
+                            const div = document.createElement('div');
+                            div.className = 'number-item';
+                            
+                            const number = document.createElement('span');
+                            number.className = 'number-point';
+                            number.textContent = `${startNumber + index}.`;
+                            number.setAttribute('contenteditable', 'false');
+                            
+                            const label = document.createElement('span');
+                            label.textContent = line.trim();
+                            
+                            div.appendChild(number);
+                            div.appendChild(label);
+                            fragment.appendChild(div);
+                        });
+                        
+                        range.insertNode(fragment);
+                        this.renumberList(element);
+                    }
+                    
+                    selection.removeAllRanges();
+                }
+                                
+                addNumbers(element) {
+                    const originalHTML = element.innerHTML.trim();
+                    
+                    if (!originalHTML || originalHTML === '<br>') {
+                        const div = document.createElement('div');
+                        div.className = 'number-item';
+                        
+                        const number = document.createElement('span');
+                        number.className = 'number-point';
+                        number.textContent = '1.';
+                        number.setAttribute('contenteditable', 'false');
+                        
+                        const label = document.createElement('span');
+                        label.innerHTML = '<br>';
+                        
+                        div.appendChild(number);
+                        div.appendChild(label);
+                        element.appendChild(div);
+                        
+                        setTimeout(() => {
+                            const range = document.createRange();
+                            const sel = window.getSelection();
+                            range.setStart(label, 0);
+                            range.collapse(true);
+                            sel.removeAllRanges();
+                            sel.addRange(range);
+                        }, 10);
+                        return;
+                    }
+                    
+                    const lines = originalHTML.split('<br>').filter(line => line.trim());
+                    
+                    if (lines.length === 0) {
+                        lines.push(originalHTML);
+                    }
+                    
+                    element.innerHTML = '';
+                    
+                    lines.forEach((lineHTML, index) => {
+                        const div = document.createElement('div');
+                        div.className = 'number-item';
+                        
+                        const number = document.createElement('span');
+                        number.className = 'number-point';
+                        number.textContent = `${index + 1}.`;
+                        number.setAttribute('contenteditable', 'false');
+                        
+                        const label = document.createElement('span');
+                        label.innerHTML = lineHTML.trim();
+                        
+                        div.appendChild(number);
+                        div.appendChild(label);
+                        element.appendChild(div);
+                    });
+                }
+                                
+                setupNumberEnterKey(element, containerId) {
+                    element.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            const selection = window.getSelection();
+                            const range = selection.getRangeAt(0);
+                            const container = range.commonAncestorContainer;
+                            
+                            let numberItem = container.nodeType === 3 ? container.parentNode : container;
+                            while (numberItem && !numberItem.classList.contains('number-item')) {
+                                numberItem = numberItem.parentNode;
+                            }
+                            
+                            if (numberItem && numberItem.classList.contains('number-item')) {
+                                e.preventDefault();
+                                
+                                const label = numberItem.querySelector('span:last-child');
+                                const textContent = label.textContent.trim();
+                                
+                                if (!textContent || textContent === '') {
+                                    const br = document.createElement('br');
+                                    numberItem.parentNode.insertBefore(br, numberItem.nextSibling);
+                                    numberItem.remove();
+                                    
+                                    this.renumberList(element);
+                                    
+                                    const newRange = document.createRange();
+                                    newRange.setStartAfter(br);
+                                    newRange.collapse(true);
+                                    selection.removeAllRanges();
+                                    selection.addRange(newRange);
+                                    return;
+                                }
+                                
+                                if (e.shiftKey) {
+                                    document.execCommand('insertHTML', false, '<br>');
+                                } else {
+                                    const textAfterCursor = this.getTextAfterCursor(range, label);
+                                    
+                                    if (textAfterCursor) {
+                                        this.removeTextAfterCursor(range, label);
+                                    }
+                                    
+                                    const newDiv = document.createElement('div');
+                                    newDiv.className = 'number-item';
+                                    
+                                    const number = document.createElement('span');
+                                    number.className = 'number-point';
+                                    number.textContent = '1.';
+                                    number.setAttribute('contenteditable', 'false');
+                                    
+                                    const newLabel = document.createElement('span');
+                                    newLabel.innerHTML = textAfterCursor || '<br>';
+                                    
+                                    newDiv.appendChild(number);
+                                    newDiv.appendChild(newLabel);
+                                    
+                                    numberItem.parentNode.insertBefore(newDiv, numberItem.nextSibling);
+                                    
+                                    this.renumberList(element);
+                                    
+                                    const newRange = document.createRange();
+                                    newRange.setStart(newLabel, 0);
+                                    newRange.collapse(true);
+                                    selection.removeAllRanges();
+                                    selection.addRange(newRange);
+                                }
+                            }
+                        } else if (e.key === 'Backspace') {
+                            const selection = window.getSelection();
+                            const range = selection.getRangeAt(0);
+                            const container = range.commonAncestorContainer;
+                            
+                            let numberItem = container.nodeType === 3 ? container.parentNode : container;
+                            while (numberItem && !numberItem.classList.contains('number-item')) {
+                                numberItem = numberItem.parentNode;
+                            }
+                            
+                            if (numberItem && numberItem.classList.contains('number-item')) {
+                                const label = numberItem.querySelector('span:last-child');
+                                
+                                if (range.startOffset === 0 && range.endOffset === 0) {
+                                    const textContent = label.textContent.trim();
+                                    
+                                    if (!textContent || textContent === '') {
+                                        e.preventDefault();
+                                        const br = document.createElement('br');
+                                        numberItem.parentNode.insertBefore(br, numberItem);
+                                        numberItem.remove();
+                                        
+                                        this.renumberList(element);
+                                        
+                                        const newRange = document.createRange();
+                                        newRange.setStartAfter(br);
+                                        newRange.collapse(true);
+                                        selection.removeAllRanges();
+                                        selection.addRange(newRange);
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                preventNumberFormatting(element) {
+                    element.addEventListener('input', (e) => {
+                        const numbers = element.querySelectorAll('.number-point');
+                        numbers.forEach(number => {
+                            number.style.fontWeight = 'normal';
+                            number.style.textDecoration = 'none';
+                            number.style.fontStyle = 'normal';
+                            number.style.backgroundColor = 'transparent';
+                            
+                            if (number.parentElement) {
+                                const computedColor = window.getComputedStyle(number.parentElement.querySelector('span:last-child')).color;
+                                number.style.color = computedColor;
+                            }
+                        });
+                    });
+                }
             addCheckboxToSelection(element, selection) {
                 const range = selection.getRangeAt(0);
                 let selectedText = selection.toString().trim();
@@ -881,6 +1255,8 @@ class TodoApp {
                         this.setupCheckboxEnterKey(content, container.id);
                         this.setupBulletEnterKey(content, container.id);
                         this.preventBulletFormatting(content);
+                        this.setupNumberEnterKey(content, container.id);
+                        this.preventNumberFormatting(content);
                     }
                     if (!container.expanded) {
                         div.addEventListener('mousedown', (e) => {
