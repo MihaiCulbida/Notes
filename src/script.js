@@ -457,113 +457,104 @@ class TodoApp {
              }
              
              addBulletToSelection(element, selection) {
-                 const range = selection.getRangeAt(0);
-                 let selectedText = selection.toString().trim();
-                 
-                 if (!selectedText) return;
-                 
-                 selectedText = selectedText.replace(/^•\s*/gm, '').trim();
-                 
-                 const startContainer = range.startContainer;
-                 const endContainer = range.endContainer;
-                 
-                 let startNode = startContainer.nodeType === 3 ? startContainer.parentNode : startContainer;
-                 if (startNode.classList && startNode.classList.contains('bullet-point')) {
-                     return;
-                 }
-                 
-                 let endNode = endContainer.nodeType === 3 ? endContainer.parentNode : endContainer;
-                 if (endNode.classList && endNode.classList.contains('bullet-point')) {
-                     return;
-                 }
-                 
-                 let startItem = startContainer.nodeType === 3 ? startContainer.parentNode : startContainer;
-                 while (startItem && startItem !== element && !startItem.classList.contains('checkbox-item') && !startItem.classList.contains('bullet-item')) {
-                     startItem = startItem.parentNode;
-                 }
-                 
-                 let endItem = endContainer.nodeType === 3 ? endContainer.parentNode : endContainer;
-                 while (endItem && endItem !== element && !endItem.classList.contains('checkbox-item') && !endItem.classList.contains('bullet-item')) {
-                     endItem = endItem.parentNode;
-                 }
-                 
-                 const itemsToRemove = [];
-                 const allItems = element.querySelectorAll('.checkbox-item, .bullet-item');
-                 
-                 allItems.forEach(item => {
-                     if (range.intersectsNode(item)) {
-                         const label = item.querySelector('span:last-child');
-                         if (label && range.intersectsNode(label)) {
-                             itemsToRemove.push(item);
-                         }
-                     }
-                 });
-                 
-                 if (itemsToRemove.length > 0) {
-                     const allAreBullets = itemsToRemove.every(item => item.classList.contains('bullet-item'));
-                     
-                     if (allAreBullets) {
-                         itemsToRemove.forEach(item => {
-                             this.removeBullet(item, element);
-                         });
-                         return;
-                     }
-                     
-                     const lines = selectedText.split('\n').filter(line => line.trim());
-                     
-                     itemsToRemove.forEach((item, index) => {
-                         const next = item.nextSibling;
-                         const parent = item.parentNode;
-                         const lineText = lines[index] ? lines[index].trim() : '';
-                         
-                         const div = document.createElement('div');
-                         div.className = 'bullet-item';
-                         
-                         const bullet = document.createElement('span');
-                         bullet.className = 'bullet-point';
-                         bullet.textContent = '•';
-                         bullet.setAttribute('contenteditable', 'false');
-                         
-                         const label = document.createElement('span');
-                         label.textContent = lineText;
-                         
-                         div.appendChild(bullet);
-                         div.appendChild(label);
-                         
-                         parent.replaceChild(div, item);
-                         
-                         if (next && next.nodeType === 3 && next.textContent.trim() === '') {
-                             next.remove();
-                         }
-                     });
-                 } else {
-                     range.deleteContents();
-                     
-                     const lines = selectedText.split('\n').filter(line => line.trim());
-                     const fragment = document.createDocumentFragment();
-                     
-                     lines.forEach((line) => {
-                         const div = document.createElement('div');
-                         div.className = 'bullet-item';
-                         
-                         const bullet = document.createElement('span');
-                         bullet.className = 'bullet-point';
-                         bullet.textContent = '•';
-                         bullet.setAttribute('contenteditable', 'false');
-                         
-                         const label = document.createElement('span');
-                         label.textContent = line.trim();
-                         
-                         div.appendChild(bullet);
-                         div.appendChild(label);
-                         fragment.appendChild(div);
-                     });
-                     
-                     range.insertNode(fragment);
-                 }
-                 
-                 selection.removeAllRanges();
-             }
+                const range = selection.getRangeAt(0);
+                let selectedText = selection.toString().trim();
+                
+                if (!selectedText) return;
+                
+                const startContainer = range.startContainer;
+                const endContainer = range.endContainer;
+                
+                let startNode = startContainer.nodeType === 3 ? startContainer.parentNode : startContainer;
+                if (startNode.classList && (startNode.classList.contains('bullet-point') || startNode.classList.contains('number-point'))) {
+                    return;
+                }
+                
+                let endNode = endContainer.nodeType === 3 ? endContainer.parentNode : endContainer;
+                if (endNode.classList && (endNode.classList.contains('bullet-point') || endNode.classList.contains('number-point'))) {
+                    return;
+                }
+                
+                const itemsToRemove = [];
+                const allItems = element.querySelectorAll('.checkbox-item, .bullet-item, .number-item');
+                
+            allItems.forEach(item => {
+                const label = item.querySelector('span:last-child');
+                if (label) {
+                    const labelText = label.textContent || label.innerText || '';
+                    const labelStart = selectedText.indexOf(labelText.trim());
+                    
+                    if (labelStart !== -1) {
+                        itemsToRemove.push(item);
+                    }
+                }
+            });
+                
+                if (itemsToRemove.length > 0) {
+                    const allAreBullets = itemsToRemove.every(item => item.classList.contains('bullet-item'));
+                    
+                    if (allAreBullets) {
+                        itemsToRemove.forEach(item => {
+                            this.removeBullet(item, element);
+                        });
+                        return;
+                    }
+                    const wasNumberList = itemsToRemove.some(item => item.classList.contains('number-item'));
+                    
+                    itemsToRemove.forEach((item) => {
+                        const parent = item.parentNode;
+                        const labelSpan = item.querySelector('span:last-child');
+                        const lineText = labelSpan ? (labelSpan.innerHTML || '').trim() : '';
+                        
+                        const div = document.createElement('div');
+                        div.className = 'bullet-item';
+                        
+                        const bullet = document.createElement('span');
+                        bullet.className = 'bullet-point';
+                        bullet.textContent = '•';
+                        bullet.setAttribute('contenteditable', 'false');
+                        
+                        const label = document.createElement('span');
+                        label.innerHTML = lineText;
+                        
+                        div.appendChild(bullet);
+                        div.appendChild(label);
+                        
+                        parent.replaceChild(div, item);
+                    });
+                    
+                    if (wasNumberList) {
+                        this.renumberList(element);
+                    }
+                } else {
+                    selectedText = selectedText.replace(/^•\s*/gm, '').replace(/^\d+\.\s*/gm, '').trim();
+                    range.deleteContents();
+                    
+                    const lines = selectedText.split('\n').filter(line => line.trim());
+                    const fragment = document.createDocumentFragment();
+                    
+                    lines.forEach((line) => {
+                        const div = document.createElement('div');
+                        div.className = 'bullet-item';
+                        
+                        const bullet = document.createElement('span');
+                        bullet.className = 'bullet-point';
+                        bullet.textContent = '•';
+                        bullet.setAttribute('contenteditable', 'false');
+                        
+                        const label = document.createElement('span');
+                        label.textContent = line.trim();
+                        
+                        div.appendChild(bullet);
+                        div.appendChild(label);
+                        fragment.appendChild(div);
+                    });
+                    
+                    range.insertNode(fragment);
+                }
+                
+                selection.removeAllRanges();
+            }
              
              addBullets(element) {
                  const originalHTML = element.innerHTML.trim();
@@ -707,32 +698,33 @@ class TodoApp {
                         return;
                     }
                     
-                    selectedText = selectedText.replace(/^\d+\.\s*/gm, '').trim();
-                    
                     const startContainer = range.startContainer;
                     const endContainer = range.endContainer;
                     
                     let startNode = startContainer.nodeType === 3 ? startContainer.parentNode : startContainer;
-                    if (startNode.classList && startNode.classList.contains('number-point')) {
+                    if (startNode.classList && (startNode.classList.contains('number-point') || startNode.classList.contains('bullet-point'))) {
                         return;
                     }
                     
                     let endNode = endContainer.nodeType === 3 ? endContainer.parentNode : endContainer;
-                    if (endNode.classList && endNode.classList.contains('number-point')) {
+                    if (endNode.classList && (endNode.classList.contains('number-point') || endNode.classList.contains('bullet-point'))) {
                         return;
                     }
                     
                     const itemsToRemove = [];
                     const allItems = element.querySelectorAll('.checkbox-item, .bullet-item, .number-item');
                     
-                    allItems.forEach(item => {
-                        if (range.intersectsNode(item)) {
-                            const label = item.querySelector('span:last-child');
-                            if (label && range.intersectsNode(label)) {
-                                itemsToRemove.push(item);
-                            }
+                allItems.forEach(item => {
+                    const label = item.querySelector('span:last-child');
+                    if (label) {
+                        const labelText = label.textContent || label.innerText || '';
+                        const labelStart = selectedText.indexOf(labelText.trim());
+                        
+                        if (labelStart !== -1) {
+                            itemsToRemove.push(item);
                         }
-                    });
+                    }
+                });
                     
                     if (itemsToRemove.length > 0) {
                         const allAreNumbers = itemsToRemove.every(item => item.classList.contains('number-item'));
@@ -744,18 +736,15 @@ class TodoApp {
                             return;
                         }
                         
-                        const lines = selectedText.split('\n').filter(line => line.trim());
-                        
                         let insertPosition = itemsToRemove[0];
-                        const parent = insertPosition.parentNode;
-                        
                         const existingNumbersBefore = Array.from(element.querySelectorAll('.number-item'))
                             .filter(item => item.compareDocumentPosition(insertPosition) & Node.DOCUMENT_POSITION_FOLLOWING);
                         const startNumber = existingNumbersBefore.length + 1;
                         
                         itemsToRemove.forEach((item, index) => {
-                            const next = item.nextSibling;
-                            const lineText = lines[index] ? lines[index].trim() : '';
+                            const parent = item.parentNode;
+                            const labelSpan = item.querySelector('span:last-child');
+                            const lineText = labelSpan ? (labelSpan.innerHTML || '').trim() : '';
                             
                             const div = document.createElement('div');
                             div.className = 'number-item';
@@ -766,20 +755,17 @@ class TodoApp {
                             number.setAttribute('contenteditable', 'false');
                             
                             const label = document.createElement('span');
-                            label.textContent = lineText;
+                            label.innerHTML = lineText;
                             
                             div.appendChild(number);
                             div.appendChild(label);
                             
                             parent.replaceChild(div, item);
-                            
-                            if (next && next.nodeType === 3 && next.textContent.trim() === '') {
-                                next.remove();
-                            }
                         });
                         
                         this.renumberList(element);
                     } else {
+                        selectedText = selectedText.replace(/^•\s*/gm, '').replace(/^\d+\.\s*/gm, '').trim();
                         range.deleteContents();
                         
                         const lines = selectedText.split('\n').filter(line => line.trim());
@@ -993,42 +979,33 @@ class TodoApp {
                 
                 if (!selectedText) return;
                 
-                selectedText = selectedText.replace(/^•\s*/gm, '').trim();
-                
                 const startContainer = range.startContainer;
                 const endContainer = range.endContainer;
                 
                 let startNode = startContainer.nodeType === 3 ? startContainer.parentNode : startContainer;
-                if (startNode.classList && startNode.classList.contains('bullet-point')) {
+                if (startNode.classList && (startNode.classList.contains('bullet-point') || startNode.classList.contains('number-point'))) {
                     return;
                 }
                 
                 let endNode = endContainer.nodeType === 3 ? endContainer.parentNode : endContainer;
-                if (endNode.classList && endNode.classList.contains('bullet-point')) {
+                if (endNode.classList && (endNode.classList.contains('bullet-point') || endNode.classList.contains('number-point'))) {
                     return;
                 }
                 
-                let startItem = startContainer.nodeType === 3 ? startContainer.parentNode : startContainer;
-                while (startItem && startItem !== element && !startItem.classList.contains('checkbox-item') && !startItem.classList.contains('bullet-item')) {
-                    startItem = startItem.parentNode;
-                }
-                
-                let endItem = endContainer.nodeType === 3 ? endContainer.parentNode : endContainer;
-                while (endItem && endItem !== element && !endItem.classList.contains('checkbox-item') && !endItem.classList.contains('bullet-item')) {
-                    endItem = endItem.parentNode;
-                }
-                
                 const itemsToRemove = [];
-                const allItems = element.querySelectorAll('.checkbox-item, .bullet-item');
+                const allItems = element.querySelectorAll('.checkbox-item, .bullet-item, .number-item');
                 
-                allItems.forEach(item => {
-                    if (range.intersectsNode(item)) {
-                        const label = item.querySelector('span:last-child');
-                        if (label && range.intersectsNode(label)) {
-                            itemsToRemove.push(item);
-                        }
+            allItems.forEach(item => {
+                const label = item.querySelector('span:last-child');
+                if (label) {
+                    const labelText = label.textContent || label.innerText || '';
+                    const labelStart = selectedText.indexOf(labelText.trim());
+                    
+                    if (labelStart !== -1) {
+                        itemsToRemove.push(item);
                     }
-                });
+                }
+            });
                 
                 if (itemsToRemove.length > 0) {
                     const allAreCheckboxes = itemsToRemove.every(item => item.classList.contains('checkbox-item'));
@@ -1040,12 +1017,12 @@ class TodoApp {
                         return;
                     }
                     
-                    const lines = selectedText.split('\n').filter(line => line.trim());
+                    const wasNumberList = itemsToRemove.some(item => item.classList.contains('number-item'));
                     
-                    itemsToRemove.forEach((item, index) => {
-                        const next = item.nextSibling;
+                    itemsToRemove.forEach((item) => {
                         const parent = item.parentNode;
-                        const lineText = lines[index] ? lines[index].trim() : '';
+                        const labelSpan = item.querySelector('span:last-child');
+                        const lineText = labelSpan ? (labelSpan.innerHTML || '').trim() : '';
                         
                         const div = document.createElement('div');
                         div.className = 'checkbox-item';
@@ -1060,18 +1037,19 @@ class TodoApp {
                         });
                         
                         const label = document.createElement('span');
-                        label.textContent = lineText;
+                        label.innerHTML = lineText;
                         
                         div.appendChild(checkbox);
                         div.appendChild(label);
                         
                         parent.replaceChild(div, item);
-                        
-                        if (next && next.nodeType === 3 && next.textContent.trim() === '') {
-                            next.remove();
-                        }
                     });
+                    
+                    if (wasNumberList) {
+                        this.renumberList(element);
+                    }
                 } else {
+                    selectedText = selectedText.replace(/^•\s*/gm, '').replace(/^\d+\.\s*/gm, '').trim();
                     range.deleteContents();
                     
                     const lines = selectedText.split('\n').filter(line => line.trim());
