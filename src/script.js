@@ -1306,6 +1306,30 @@ class TodoApp {
                     }
                     
                     wrapper.appendChild(div);
+                    
+                    if (container.expanded) {
+                        const placeholder = document.createElement('div');
+                        placeholder.className = 'container';
+                        placeholder.style.pointerEvents = 'none';
+                        
+                        const placeholderTitle = document.createElement('div');
+                        placeholderTitle.className = 'container-title';
+                        placeholderTitle.textContent = container.title;
+                        
+                        const placeholderContent = document.createElement('div');
+                        placeholderContent.className = 'container-content';
+                        placeholderContent.innerHTML = container.content;
+                        
+                        const placeholderTimestamp = document.createElement('div');
+                        placeholderTimestamp.className = 'container-timestamp';
+                        placeholderTimestamp.textContent = this.formatDate(container.lastModified);
+                        
+                        placeholder.appendChild(placeholderTitle);
+                        placeholder.appendChild(placeholderContent);
+                        placeholder.appendChild(placeholderTimestamp);
+                        
+                        wrapper.appendChild(placeholder);
+                    }
                 });
             }            
             updateEmptyState() {

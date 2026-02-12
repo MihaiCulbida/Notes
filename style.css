@@ -103,6 +103,7 @@ body {
     text-overflow: ellipsis;
     max-height: calc(100% - 60px);
 }
+
 .container-content:empty:before {
     content: 'Start writing...';
     color: rgba(200, 170, 100, 0.4);
@@ -346,9 +347,6 @@ strong {
         opacity: 1;
         transform: translateY(0);
     }
-}
-.container.new {
-    animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .container-content p {
     margin: 8px 0;
