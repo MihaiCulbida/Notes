@@ -1,9 +1,12 @@
 class TodoApp {
             constructor() {
                 this.containers = [];
+                this.folders = [];
                 this.activeContainer = null;
                 this.selectedContainer = null;
                 this.pressTimer = null;
+                this.currentFolderId = null; 
+                this.folderHistory = [];
                 this.init();
             }
 
@@ -15,24 +18,51 @@ class TodoApp {
             }
 
             setupEventListeners() {
-                document.getElementById('addButton').addEventListener('click', () => this.addContainer());
+                document.getElementById('addButton').addEventListener('click', () => {
+                    this.showTypeSelector();
+                });
+                
+                document.getElementById('typeSelectorModal').addEventListener('click', (e) => {
+                    if (e.target.classList.contains('type-selector-modal')) {
+                        this.hideTypeSelector();
+                    }
+                    
+                    const option = e.target.closest('.type-option');
+                    if (option) {
+                        const type = option.dataset.type;
+                        this.hideTypeSelector();
+                        
+                        if (type === 'container') {
+                            this.addContainer();
+                        } else if (type === 'folder') {
+                            this.addFolder();
+                        }
+                    }
+                });
                 
                 document.getElementById('deleteButton').addEventListener('click', () => {
                     if (this.selectedContainer) {
                         this.showConfirmDialog();
                     }
                 });
-
+            
                 document.getElementById('confirmYes').addEventListener('click', () => {
-                    this.deleteContainer(this.selectedContainer);
+                    if (this.selectedContainer) {
+                        this.deleteContainer(this.selectedContainer);
+                    }
                     this.hideConfirmDialog();
                 });
-
+            
                 document.getElementById('confirmNo').addEventListener('click', () => {
                     this.hideConfirmDialog();
                 });
-                
+            
                 document.getElementById('overlay').addEventListener('click', () => {
+                    const confirmDialog = document.getElementById('confirmDialog');
+                    if (confirmDialog.classList.contains('show')) {
+                        return;
+                    }
+                    
                     if (this.activeContainer) {
                         this.collapseAll();
                         this.render();
@@ -40,21 +70,26 @@ class TodoApp {
                         this.hideConfirmDialog();
                     }
                 });
-
+            
                 document.getElementById('toolbar').addEventListener('click', (e) => {
                     const btn = e.target.closest('.toolbar-btn');
                     if (btn && this.activeContainer) {
                         this.handleToolbarAction(btn.dataset.action);
                     }
                 });
+                document.getElementById('backButton').addEventListener('click', () => {
+                    this.navigateToRoot();
+                });
             }
 
             addContainer() {
                 const container = {
                     id: Date.now(),
+                    type: 'container',
                     title: '',
                     content: '',
                     expanded: false,
+                    parentId: this.currentFolderId,
                     lastModified: new Date().toISOString()
                 };
                 this.containers.push(container);
@@ -63,20 +98,109 @@ class TodoApp {
                 this.updateEmptyState();
             }
 
+            showTypeSelector() {
+                document.getElementById('typeSelectorModal').classList.add('show');
+            }
+            
+            hideTypeSelector() {
+                document.getElementById('typeSelectorModal').classList.remove('show');
+            }
+            
+            addFolder() {
+                const folder = {
+                    id: Date.now(),
+                    type: 'folder',
+                    title: '',
+                    content: '', 
+                    expanded: false, 
+                    parentId: this.currentFolderId,
+                    lastModified: new Date().toISOString()
+                };
+                this.containers.push(folder);
+                this.saveToStorage();
+                this.render();
+                this.updateEmptyState();
+            }
+            
+            openFolder(id) {
+                this.currentFolderId = id;
+                this.render();
+                this.updateBreadcrumb();
+            }
+            
+            navigateToRoot() {
+                this.currentFolderId = null;
+                this.render();
+                this.updateBreadcrumb();
+            }
+            
+            updateBreadcrumb() {
+                const breadcrumb = document.getElementById('breadcrumb');
+                const backButton = document.getElementById('backButton');
+                
+                if (!breadcrumb) {
+                    const bc = document.createElement('div');
+                    bc.id = 'breadcrumb';
+                    bc.className = 'breadcrumb';
+                    document.body.appendChild(bc);
+                }
+                
+                const breadcrumbEl = document.getElementById('breadcrumb');
+                breadcrumbEl.innerHTML = '';
+                
+                if (this.currentFolderId === null) {
+                    breadcrumbEl.classList.remove('show');
+                    backButton.classList.remove('show'); 
+                    return;
+                }
+                
+                breadcrumbEl.classList.add('show');
+                backButton.classList.add('show'); 
+                
+                const rootItem = document.createElement('span');
+                rootItem.className = 'breadcrumb-item';
+                rootItem.textContent = 'Home';
+                rootItem.addEventListener('click', () => this.navigateToRoot());
+                breadcrumbEl.appendChild(rootItem);
+                
+                const sep = document.createElement('span');
+                sep.className = 'breadcrumb-separator';
+                sep.textContent = '/';
+                breadcrumbEl.appendChild(sep);
+                
+                const folder = this.containers.find(c => c.id === this.currentFolderId);
+                if (folder) {
+                    const currentItem = document.createElement('span');
+                    currentItem.className = 'breadcrumb-item active';
+                    currentItem.textContent = folder.title || 'Untitled Folder';
+                    breadcrumbEl.appendChild(currentItem);
+                }
+            }
+
             handlePressStart(id, event) {
                 event.preventDefault();
+                const container = this.containers.find(c => c.id === id);
+                const isFolder = container && container.type === 'folder';
+                
                 this.pressTimer = setTimeout(() => {
                     this.selectContainer(id);
                 }, 500);
             }
-
+            
             handlePressEnd(id, event) {
                 clearTimeout(this.pressTimer);
+                
+                const container = this.containers.find(c => c.id === id);
+                const isFolder = container && container.type === 'folder';
                 
                 if (!this.selectedContainer || this.selectedContainer !== id) {
                     setTimeout(() => {
                         if (!this.selectedContainer || this.selectedContainer !== id) {
-                            this.expandContainer(id);
+                            if (isFolder) {
+                                this.openFolder(id);
+                            } else {
+                                this.expandContainer(id);
+                            }
                         }
                     }, 50);
                 }
@@ -130,6 +254,15 @@ class TodoApp {
             }
 
             deleteContainer(id) {
+                const container = this.containers.find(c => c.id === id);
+                
+                if (container && container.type === 'folder') {
+                    const childContainers = this.containers.filter(c => c.parentId === id);
+                    childContainers.forEach(child => {
+                        this.deleteContainer(child.id); 
+                    });
+                }
+                
                 this.containers = this.containers.filter(c => c.id !== id);
                 this.selectedContainer = null;
                 this.saveToStorage();
@@ -139,6 +272,16 @@ class TodoApp {
             }
 
             showConfirmDialog() {
+                const container = this.containers.find(c => c.id === this.selectedContainer);
+                const isFolder = container && container.type === 'folder';
+                const dialogText = document.querySelector('.confirm-dialog-text');
+                
+                if (isFolder) {
+                    dialogText.textContent = 'Are you sure you want to delete this folder and all its contents?';
+                } else {
+                    dialogText.textContent = 'Are you sure you want to delete this container?';
+                }
+                
                 document.getElementById('confirmDialog').classList.add('show');
                 document.getElementById('overlay').classList.add('show');
             }
@@ -1228,10 +1371,16 @@ class TodoApp {
                 const hasExpanded = this.containers.some(c => c.expanded);
                 overlay.classList.toggle('show', hasExpanded);
                 
-                this.containers.forEach((container, index) => {
+                const visibleContainers = this.containers.filter(c => 
+                    (c.parentId || null) === this.currentFolderId
+                );
+                
+                visibleContainers.forEach((container, index) => {
                     const div = document.createElement('div');
                     const isSelected = this.selectedContainer === container.id;
-                    div.className = `container ${container.expanded ? 'expanded' : ''} ${isSelected ? 'selected' : ''} ${index === this.containers.length - 1 && !container.expanded ? 'new' : ''}`;
+                    const isFolder = container.type === 'folder';
+                    
+                    div.className = `container ${isFolder ? 'folder' : ''} ${container.expanded ? 'expanded' : ''} ${isSelected ? 'selected' : ''}`;
                     div.dataset.id = container.id;
                     
                     const closeBtn = document.createElement('button');
@@ -1244,7 +1393,7 @@ class TodoApp {
                     
                     const title = document.createElement('div');
                     title.className = 'container-title';
-                    title.contentEditable = true;
+                    title.contentEditable = true; 
                     title.textContent = container.title;
                     
                     title.addEventListener('input', () => {
@@ -1255,96 +1404,138 @@ class TodoApp {
                         e.stopPropagation();
                     });
                     
-                    const content = document.createElement('div');
-                    content.className = 'container-content';
-                    content.contentEditable = container.expanded;
-                    content.innerHTML = container.content;
-                    
-                    this.attachCheckboxListeners(content, container.id);
-                    if (container.expanded) {
-                        this.setupCheckboxEnterKey(content, container.id);
-                        this.setupBulletEnterKey(content, container.id);
-                        this.preventBulletFormatting(content);
-                        this.setupNumberEnterKey(content, container.id);
-                        this.preventNumberFormatting(content);
-                    }
-                    if (!container.expanded) {
-                        div.addEventListener('mousedown', (e) => {
-                            this.handlePressStart(container.id, e);
+            if (isFolder && !container.expanded) {
+                const folderIcon = document.createElement('img');
+                folderIcon.src = 'img/folder.png';
+                folderIcon.className = 'folder-icon';
+                
+                const timestamp = document.createElement('div');
+                timestamp.className = 'container-timestamp';
+                timestamp.textContent = this.formatDate(container.lastModified);
+                
+                div.appendChild(title);
+                div.appendChild(folderIcon);
+                div.appendChild(timestamp);
+                
+                div.addEventListener('mousedown', (e) => {
+                    this.handlePressStart(container.id, e);
+                });
+                
+                div.addEventListener('mouseup', (e) => {
+                    this.handlePressEnd(container.id, e);
+                });
+                
+                div.addEventListener('mouseleave', () => {
+                    clearTimeout(this.pressTimer);
+                });
+                
+                div.addEventListener('touchstart', (e) => {
+                    this.handlePressStart(container.id, e);
+                });
+                
+                div.addEventListener('touchend', (e) => {
+                    this.handlePressEnd(container.id, e);
+                });
+                
+            } else {
+                        const content = document.createElement('div');
+                        content.className = 'container-content';
+                        content.contentEditable = container.expanded;
+                        content.innerHTML = container.content || '';
+                        
+                        this.attachCheckboxListeners(content, container.id);
+                        
+                        if (container.expanded) {
+                            this.setupCheckboxEnterKey(content, container.id);
+                            this.setupBulletEnterKey(content, container.id);
+                            this.preventBulletFormatting(content);
+                            this.setupNumberEnterKey(content, container.id);
+                            this.preventNumberFormatting(content);
+                        }
+                        
+                        if (!container.expanded) {
+                            div.addEventListener('mousedown', (e) => {
+                                this.handlePressStart(container.id, e);
+                            });
+                            
+                            div.addEventListener('mouseup', (e) => {
+                                this.handlePressEnd(container.id, e);
+                            });
+                            
+                            div.addEventListener('mouseleave', () => {
+                                clearTimeout(this.pressTimer);
+                            });
+                            
+                            div.addEventListener('touchstart', (e) => {
+                                this.handlePressStart(container.id, e);
+                            });
+                            
+                            div.addEventListener('touchend', (e) => {
+                                this.handlePressEnd(container.id, e);
+                            });
+                        }
+                        
+                        content.addEventListener('input', () => {
+                            this.updateContainer(container.id, 'content', content.innerHTML);
                         });
                         
-                        div.addEventListener('mouseup', (e) => {
-                            this.handlePressEnd(container.id, e);
-                        });
+                        if (container.expanded) {
+                            const metadata = document.createElement('div');
+                            metadata.className = 'container-metadata';
+                            const charCount = this.getCharCount(container.content || '');
+                            metadata.textContent = `${this.formatDate(container.lastModified)} | ${charCount} characters`;
+                            
+                            div.appendChild(closeBtn);
+                            div.appendChild(title);
+                            div.appendChild(metadata);
+                            div.appendChild(content);
+                        } else {
+                            const timestamp = document.createElement('div');
+                            timestamp.className = 'container-timestamp';
+                            timestamp.textContent = this.formatDate(container.lastModified);
+                            
+                            div.appendChild(closeBtn);
+                            div.appendChild(title);
+                            div.appendChild(content);
+                            div.appendChild(timestamp);
+                        }
                         
-                        div.addEventListener('mouseleave', () => {
-                            clearTimeout(this.pressTimer);
-                        });
-                        
-                        div.addEventListener('touchstart', (e) => {
-                            this.handlePressStart(container.id, e);
-                        });
-                        
-                        div.addEventListener('touchend', (e) => {
-                            this.handlePressEnd(container.id, e);
-                        });
-                    }
-                    
-                    content.addEventListener('input', () => {
-                        this.updateContainer(container.id, 'content', content.innerHTML);
-                    });
-                    
-                    if (container.expanded) {
-                        const metadata = document.createElement('div');
-                        metadata.className = 'container-metadata';
-                        const charCount = this.getCharCount(container.content);
-                        metadata.textContent = `${this.formatDate(container.lastModified)} | ${charCount} characters`;
-                        
-                        div.appendChild(closeBtn);
-                        div.appendChild(title);
-                        div.appendChild(metadata);
-                        div.appendChild(content);
-                    } else {
-                        const timestamp = document.createElement('div');
-                        timestamp.className = 'container-timestamp';
-                        timestamp.textContent = this.formatDate(container.lastModified);
-                        
-                        div.appendChild(closeBtn);
-                        div.appendChild(title);
-                        div.appendChild(content);
-                        div.appendChild(timestamp);
+                        if (container.expanded) {
+                            const placeholder = document.createElement('div');
+                            placeholder.className = 'container';
+                            placeholder.style.pointerEvents = 'none';
+                            
+                            const placeholderTitle = document.createElement('div');
+                            placeholderTitle.className = 'container-title';
+                            placeholderTitle.textContent = container.title;
+                            
+                            const placeholderContent = document.createElement('div');
+                            placeholderContent.className = 'container-content';
+                            placeholderContent.innerHTML = container.content || '';
+                            
+                            const placeholderTimestamp = document.createElement('div');
+                            placeholderTimestamp.className = 'container-timestamp';
+                            placeholderTimestamp.textContent = this.formatDate(container.lastModified);
+                            
+                            placeholder.appendChild(placeholderTitle);
+                            placeholder.appendChild(placeholderContent);
+                            placeholder.appendChild(placeholderTimestamp);
+                            
+                            wrapper.appendChild(placeholder);
+                        }
                     }
                     
                     wrapper.appendChild(div);
-                    
-                    if (container.expanded) {
-                        const placeholder = document.createElement('div');
-                        placeholder.className = 'container';
-                        placeholder.style.pointerEvents = 'none';
-                        
-                        const placeholderTitle = document.createElement('div');
-                        placeholderTitle.className = 'container-title';
-                        placeholderTitle.textContent = container.title;
-                        
-                        const placeholderContent = document.createElement('div');
-                        placeholderContent.className = 'container-content';
-                        placeholderContent.innerHTML = container.content;
-                        
-                        const placeholderTimestamp = document.createElement('div');
-                        placeholderTimestamp.className = 'container-timestamp';
-                        placeholderTimestamp.textContent = this.formatDate(container.lastModified);
-                        
-                        placeholder.appendChild(placeholderTitle);
-                        placeholder.appendChild(placeholderContent);
-                        placeholder.appendChild(placeholderTimestamp);
-                        
-                        wrapper.appendChild(placeholder);
-                    }
                 });
+                
+                this.updateBreadcrumb();
             }            
             updateEmptyState() {
                 const emptyState = document.querySelector('.empty-state');
-                emptyState.classList.toggle('hidden', this.containers.length > 0);
+                const visibleContainers = this.containers.filter(c => 
+                    (c.parentId || null) === this.currentFolderId
+                );
+                emptyState.classList.toggle('hidden', visibleContainers.length > 0);
             }
 
             attachCheckboxListeners(element, containerId) {
@@ -1387,6 +1578,12 @@ class TodoApp {
                         c.expanded = false;
                         if (!c.hasOwnProperty('title')) {
                             c.title = '';
+                        }
+                        if (!c.hasOwnProperty('type')) {
+                            c.type = 'container'; 
+                        }
+                        if (!c.hasOwnProperty('parentId')) {
+                            c.parentId = null; 
                         }
                     });
                 }
