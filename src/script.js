@@ -78,7 +78,7 @@ class TodoApp {
                     }
                 });
                 document.getElementById('backButton').addEventListener('click', () => {
-                    this.navigateToRoot();
+                    this.navigateBack(); 
                 });
             }
 
@@ -123,6 +123,9 @@ class TodoApp {
             }
             
             openFolder(id) {
+                if (this.currentFolderId !== null) {
+                    this.folderHistory.push(this.currentFolderId); 
+                }
                 this.currentFolderId = id;
                 this.render();
                 this.updateBreadcrumb();
@@ -130,6 +133,17 @@ class TodoApp {
             
             navigateToRoot() {
                 this.currentFolderId = null;
+                this.folderHistory = [];
+                this.render();
+                this.updateBreadcrumb();
+            }
+
+            navigateBack() {
+                if (this.folderHistory.length > 0) {
+                    this.currentFolderId = this.folderHistory.pop(); 
+                } else {
+                    this.currentFolderId = null; 
+                }
                 this.render();
                 this.updateBreadcrumb();
             }
@@ -150,12 +164,12 @@ class TodoApp {
                 
                 if (this.currentFolderId === null) {
                     breadcrumbEl.classList.remove('show');
-                    backButton.classList.remove('show'); 
+                    backButton.classList.remove('show');
                     return;
                 }
                 
                 breadcrumbEl.classList.add('show');
-                backButton.classList.add('show'); 
+                backButton.classList.add('show');
                 
                 const rootItem = document.createElement('span');
                 rootItem.className = 'breadcrumb-item';
@@ -163,18 +177,32 @@ class TodoApp {
                 rootItem.addEventListener('click', () => this.navigateToRoot());
                 breadcrumbEl.appendChild(rootItem);
                 
-                const sep = document.createElement('span');
-                sep.className = 'breadcrumb-separator';
-                sep.textContent = '/';
-                breadcrumbEl.appendChild(sep);
+                const path = [...this.folderHistory, this.currentFolderId];
                 
-                const folder = this.containers.find(c => c.id === this.currentFolderId);
-                if (folder) {
-                    const currentItem = document.createElement('span');
-                    currentItem.className = 'breadcrumb-item active';
-                    currentItem.textContent = folder.title || 'Untitled Folder';
-                    breadcrumbEl.appendChild(currentItem);
-                }
+                path.forEach((folderId, index) => {
+                    const sep = document.createElement('span');
+                    sep.className = 'breadcrumb-separator';
+                    sep.textContent = '/';
+                    breadcrumbEl.appendChild(sep);
+                    
+                    const folder = this.containers.find(c => c.id === folderId);
+                    if (folder) {
+                        const folderItem = document.createElement('span');
+                        folderItem.className = index === path.length - 1 ? 'breadcrumb-item active' : 'breadcrumb-item';
+                        folderItem.textContent = folder.title || 'Untitled Folder';
+                        
+                        if (index < path.length - 1) {
+                            folderItem.addEventListener('click', () => {
+                                this.folderHistory = this.folderHistory.slice(0, index);
+                                this.currentFolderId = folderId;
+                                this.render();
+                                this.updateBreadcrumb();
+                            });
+                        }
+                        
+                        breadcrumbEl.appendChild(folderItem);
+                    }
+                });
             }
 
             handlePressStart(id, event) {
@@ -1393,7 +1421,7 @@ class TodoApp {
                     
                     const title = document.createElement('div');
                     title.className = 'container-title';
-                    title.contentEditable = true; 
+                    title.contentEditable = true;
                     title.textContent = container.title;
                     
                     title.addEventListener('input', () => {
@@ -1404,40 +1432,65 @@ class TodoApp {
                         e.stopPropagation();
                     });
                     
-            if (isFolder && !container.expanded) {
-                const folderIcon = document.createElement('img');
-                folderIcon.src = 'img/folder.png';
-                folderIcon.className = 'folder-icon';
-                
-                const timestamp = document.createElement('div');
-                timestamp.className = 'container-timestamp';
-                timestamp.textContent = this.formatDate(container.lastModified);
-                
-                div.appendChild(title);
-                div.appendChild(folderIcon);
-                div.appendChild(timestamp);
-                
-                div.addEventListener('mousedown', (e) => {
-                    this.handlePressStart(container.id, e);
-                });
-                
-                div.addEventListener('mouseup', (e) => {
-                    this.handlePressEnd(container.id, e);
-                });
-                
-                div.addEventListener('mouseleave', () => {
-                    clearTimeout(this.pressTimer);
-                });
-                
-                div.addEventListener('touchstart', (e) => {
-                    this.handlePressStart(container.id, e);
-                });
-                
-                div.addEventListener('touchend', (e) => {
-                    this.handlePressEnd(container.id, e);
-                });
-                
-            } else {
+                    title.addEventListener('mousedown', (e) => {
+                        e.stopPropagation();
+                        clearTimeout(this.pressTimer); 
+                    });
+                    
+                    title.addEventListener('mouseup', (e) => {
+                        e.stopPropagation();
+                    });
+                    
+                    title.addEventListener('focus', (e) => {
+                        e.stopPropagation();
+                    });
+                    
+                    if (isFolder && !container.expanded) {
+                        const folderIcon = document.createElement('img');
+                        folderIcon.src = 'img/folder.png';
+                        folderIcon.className = 'folder-icon';
+                        
+                        const timestamp = document.createElement('div');
+                        timestamp.className = 'container-timestamp';
+                        timestamp.textContent = this.formatDate(container.lastModified);
+                        
+                        div.appendChild(title);
+                        div.appendChild(folderIcon);
+                        div.appendChild(timestamp);
+                        
+                        div.addEventListener('mousedown', (e) => {
+                            if (e.target === title || title.contains(e.target)) {
+                                return; 
+                            }
+                            this.handlePressStart(container.id, e);
+                        });
+                        
+                        div.addEventListener('mouseup', (e) => {
+                            if (e.target === title || title.contains(e.target)) {
+                                return; 
+                            }
+                            this.handlePressEnd(container.id, e);
+                        });
+                        
+                        div.addEventListener('mouseleave', () => {
+                            clearTimeout(this.pressTimer);
+                        });
+                        
+                        div.addEventListener('touchstart', (e) => {
+                            if (e.target === title || title.contains(e.target)) {
+                                return;
+                            }
+                            this.handlePressStart(container.id, e);
+                        });
+                        
+                        div.addEventListener('touchend', (e) => {
+                            if (e.target === title || title.contains(e.target)) {
+                                return;
+                            }
+                            this.handlePressEnd(container.id, e);
+                        });
+                        
+                    } else {
                         const content = document.createElement('div');
                         content.className = 'container-content';
                         content.contentEditable = container.expanded;

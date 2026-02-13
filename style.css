@@ -76,6 +76,7 @@ body {
     color: #5D4C37;
     min-height: 28px;
     flex-shrink: 0;
+    cursor: text;
 }
 .container:not(.expanded) .container-title {
     opacity: 0.9;
@@ -592,6 +593,27 @@ strong {
     gap: 10px;
     z-index: 1000;
     border: 2px solid rgba(255, 215, 100, 0.3);
+    max-width: 80%; /* ADAUGĂ */
+    overflow-x: auto; /* ADAUGĂ */
+    white-space: nowrap; /* ADAUGĂ */
+}
+
+.breadcrumb::-webkit-scrollbar { /* ADAUGĂ pentru scroll frumos */
+    height: 6px;
+}
+
+.breadcrumb::-webkit-scrollbar-track {
+    background: rgba(230, 200, 120, 0.1);
+    border-radius: 3px;
+}
+
+.breadcrumb::-webkit-scrollbar-thumb {
+    background: rgba(255, 160, 0, 0.3);
+    border-radius: 3px;
+}
+
+.breadcrumb::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 160, 0, 0.5);
 }
 
 .breadcrumb.show {
