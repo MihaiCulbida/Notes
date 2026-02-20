@@ -16,8 +16,8 @@ body {
     left: 50%;
     transform: translate(-50%, -50%);
     font-size: 28px;
-    color: rgba(200, 120, 80, 0.15);
-    font-weight: 300;
+    color: rgba(180, 100, 50, 0.384);
+    font-weight: 500;
     pointer-events: none;
     text-align: center;
     transition: opacity 0.3s ease;
