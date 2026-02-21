@@ -166,9 +166,9 @@ class TodoApp {
         }
         this.currentFolderId = id;
         this.blockFolderClick = true;
-        setTimeout(() => { this.blockFolderClick = false; }, 400);
         this.render();
         this.updateBreadcrumb();
+        setTimeout(() => { this.blockFolderClick = false; }, 800);
     }
     
     navigateToRoot() {
