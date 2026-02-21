@@ -2191,6 +2191,7 @@ class TodoApp {
                     let blockTouchEnd = false;
                     
                     div.addEventListener('touchstart', (e) => {
+                        if (container.expanded) return;
                         if (e.target.closest('.drag-handle')) return;
                         if (e.target === title || title.contains(e.target)) return;
                         touchMoved = false;
