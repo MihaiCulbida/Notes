@@ -10,6 +10,7 @@ class TodoApp {
         this.blockClick = false;
         this.pressTimer = null;
         this.currentFolderId = null; 
+        this.blockFolderClick = false;
         this.folderHistory = [];
         this.hiddenContents = new Set();
         this.draggedContainer = null;
@@ -161,9 +162,11 @@ class TodoApp {
     
     openFolder(id) {
         if (this.currentFolderId !== null) {
-            this.folderHistory.push(this.currentFolderId); 
+            this.folderHistory.push(this.currentFolderId);
         }
         this.currentFolderId = id;
+        this.blockFolderClick = true;
+        setTimeout(() => { this.blockFolderClick = false; }, 400);
         this.render();
         this.updateBreadcrumb();
     }
@@ -2085,17 +2088,17 @@ class TodoApp {
                 
                 let longPressTimer = null;
                 let touchMoved = false;
-                let didLongPress = false;
+                let blockTouchEnd = false;
                 
                 div.addEventListener('touchstart', (e) => {
                     if (e.target.closest('.drag-handle')) return;
                     if (e.target === title || title.contains(e.target)) return;
                     touchMoved = false;
-                    didLongPress = false;
+                    blockTouchEnd = false;
                     if (this.selectionMode) return;
                     longPressTimer = setTimeout(() => {
                         longPressTimer = null;
-                        didLongPress = true;
+                        blockTouchEnd = true;
                         this.enterSelectionMode(container.id);
                     }, 500);
                 }, { passive: true });
@@ -2109,15 +2112,16 @@ class TodoApp {
                 div.addEventListener('touchend', (e) => {
                     clearTimeout(longPressTimer);
                     longPressTimer = null;
+                    if (blockTouchEnd) { blockTouchEnd = false; return; }
                     if (touchMoved) return;
+                    if (this.blockFolderClick) return;
                     if (e.target.closest('.drag-handle')) return;
                     if (e.target === title || title.contains(e.target)) return;
-                    if (didLongPress) return; 
                     if (this.selectionMode) {
                         e.preventDefault();
                         this.toggleSelectContainer(container.id);
-                    } else if (!didLongPress) {
-                        this.openFolder(container.id);
+                    } else {
+                        this.openFolder(container.id); 
                     }
                 });
                                     
@@ -2175,18 +2179,17 @@ class TodoApp {
                     
                     let longPressTimer = null;
                     let touchMoved = false;
-                    let didLongPress = false;
+                    let blockTouchEnd = false;
                     
                     div.addEventListener('touchstart', (e) => {
-                        if (container.expanded) return;
                         if (e.target.closest('.drag-handle')) return;
                         if (e.target === title || title.contains(e.target)) return;
                         touchMoved = false;
-                        didLongPress = false;
+                        blockTouchEnd = false;
                         if (this.selectionMode) return;
                         longPressTimer = setTimeout(() => {
                             longPressTimer = null;
-                            didLongPress = true;
+                            blockTouchEnd = true;
                             this.enterSelectionMode(container.id);
                         }, 500);
                     }, { passive: true });
@@ -2198,20 +2201,21 @@ class TodoApp {
                     }, { passive: true });
                     
                     div.addEventListener('touchend', (e) => {
-                        if (container.expanded) return;
                         clearTimeout(longPressTimer);
                         longPressTimer = null;
+                        if (blockTouchEnd) { blockTouchEnd = false; return; }
                         if (touchMoved) return;
+                        if (this.blockFolderClick) return;
                         if (e.target.closest('.drag-handle')) return;
                         if (e.target === title || title.contains(e.target)) return;
-                        if (didLongPress) return; 
                         if (this.selectionMode) {
                             e.preventDefault();
                             this.toggleSelectContainer(container.id);
-                        } else if (!didLongPress) {
+                        } else {
                             this.expandContainer(container.id);
                         }
                     });
+                    
                     content.addEventListener('input', () => {
                         this.updateContainer(container.id, 'content', content.innerHTML);
                     });
