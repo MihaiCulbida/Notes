@@ -2124,6 +2124,14 @@ class TodoApp {
                         this.openFolder(container.id); 
                     }
                 });
+
+                div.addEventListener('click', (e) => {
+                    if (this.blockFolderClick) return;
+                    if (this.selectionMode) return;
+                    if (e.target.closest('.drag-handle')) return;
+                    if (e.target === title || title.contains(e.target)) return;
+                    this.openFolder(container.id);
+                });
                                     
                 } else {
                     const content = document.createElement('div');
@@ -2215,7 +2223,16 @@ class TodoApp {
                             this.expandContainer(container.id);
                         }
                     });
-                    
+
+                    div.addEventListener('click', (e) => {
+                        if (container.expanded) return;
+                        if (this.blockFolderClick) return;
+                        if (this.selectionMode) return;
+                        if (e.target.closest('.drag-handle')) return;
+                        if (e.target === title || title.contains(e.target)) return;
+                        this.expandContainer(container.id);
+                    });
+
                     content.addEventListener('input', () => {
                         this.updateContainer(container.id, 'content', content.innerHTML);
                     });
