@@ -858,6 +858,9 @@ class TodoApp {
             this.selectedContainers.add(id);
             document.getElementById('containersWrapper').classList.add('selection-mode');
             document.getElementById('selectionCancelBtn').classList.add('show');
+            document.getElementById('backButton').classList.add('hidden-in-selection');
+            const breadcrumb = document.getElementById('breadcrumb');
+            if (breadcrumb) breadcrumb.classList.add('hidden-in-selection');
             this.render();
             this.updateActionButtons();
             requestAnimationFrame(() => {
@@ -873,6 +876,9 @@ class TodoApp {
             this.selectedContainers.clear();
             document.getElementById('containersWrapper').classList.remove('selection-mode');
             document.getElementById('selectionCancelBtn').classList.remove('show');
+            document.getElementById('backButton').classList.remove('hidden-in-selection');
+            const breadcrumb = document.getElementById('breadcrumb');
+            if (breadcrumb) breadcrumb.classList.remove('hidden-in-selection');
             this.render();
             this.updateActionButtons();
             setTimeout(() => { this.blockClick = false; }, 400);

@@ -954,8 +954,14 @@ strong {
     box-shadow: 0 6px 24px rgba(230, 200, 120, 0.4);
     border-color: rgba(255, 160, 0, 0.6);
 }
-#hideContentImage { width: 30px; height: 30px; }
-
+#hideContentImage { 
+    width: 30px; 
+    height: 30px; 
+}
+.back-button.hidden-in-selection,
+.breadcrumb.hidden-in-selection {
+    display: none !important;
+}
 @media only screen and (max-width: 768px) {
     .delete-button { width: 55px; height: 55px; bottom: 20px; right: 90px; }
     #deleteImage { width: 26px; height: 26px; }
