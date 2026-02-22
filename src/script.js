@@ -863,6 +863,7 @@ class TodoApp {
             if (breadcrumb) breadcrumb.classList.add('hidden-in-selection');
             this.render();
             this.updateActionButtons();
+            this.updateSelectionCount();
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     this.blockClick = false;
@@ -881,9 +882,19 @@ class TodoApp {
             if (breadcrumb) breadcrumb.classList.remove('hidden-in-selection');
             this.render();
             this.updateActionButtons();
+            this.updateSelectionCount();
             setTimeout(() => { this.blockClick = false; }, 400);
         }
-        
+        updateSelectionCount() {
+            const countEl = document.getElementById('selectionCount');
+            const n = this.selectedContainers.size;
+            if (this.selectionMode && n > 0) {
+                countEl.textContent = `Selected: ${n} `;
+                countEl.classList.add('show');
+            } else {
+                countEl.classList.remove('show');
+            }
+        }
     toggleSelectContainer(id) {
         if (this.selectedContainers.has(id)) {
             this.selectedContainers.delete(id);
@@ -896,6 +907,7 @@ class TodoApp {
         }
         this.render();
         this.updateActionButtons();
+        this.updateSelectionCount();
     }
     
     updateActionButtons() {

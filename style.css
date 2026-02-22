@@ -829,10 +829,10 @@ strong {
 }
 .selection-cancel-btn {
     position: fixed;
-    top: 20px;
-    left: 20px;
-    width: 44px;
-    height: 44px;
+    top: 30px;
+    left: 30px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
     background: linear-gradient(135deg, #FFFEF8 0%, #FFFBF0 100%);
     border: 2px solid rgba(230, 200, 120, 0.4);
@@ -850,8 +850,10 @@ strong {
     display: flex;
 }
 .selection-cancel-btn:hover {
-    background: linear-gradient(135deg, #FFE9B3 0%, #FFD88A 100%);
     transform: scale(1.1);
+    box-shadow: 0 6px 24px rgba(230, 200, 120, 0.4);
+    border-color: rgba(255, 160, 0, 0.6);
+    background: linear-gradient(135deg, #FFF9E6 0%, #FFF4D0 100%);
 }
 
 .container.selected {
@@ -961,6 +963,23 @@ strong {
 .back-button.hidden-in-selection,
 .breadcrumb.hidden-in-selection {
     display: none !important;
+}
+.selection-count {
+    position: fixed;
+    top: 30px;
+    left: 95px;
+    height: 50px;
+    display: none;
+    align-items: center;
+    font-size: 22px;
+    font-weight: 500;
+    color: #6D5C41;
+    z-index: 1100;
+    white-space: nowrap;
+}
+
+.selection-count.show {
+    display: flex;
 }
 @media only screen and (max-width: 768px) {
     .delete-button { width: 55px; height: 55px; bottom: 20px; right: 90px; }
@@ -1184,6 +1203,20 @@ strong {
         height: 40px;
         padding: 8px;
         opacity: 1;
+    }
+
+    .selection-cancel-btn {
+        top: 20px;
+        left: 20px;
+        width: 45px;
+        height: 45px;
+    }
+
+    .selection-count {
+        top: 20px;
+        left: 75px;
+        height: 45px;
+        font-size: 18px;
     }
 }
 
