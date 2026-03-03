@@ -2367,9 +2367,6 @@ class TodoApp {
                 if (!c.hasOwnProperty('parentId')) {
                     c.parentId = null; 
                 }
-                if (c.title) {
-                c.title = c.title.toLowerCase();
-            }
             });
         }
     }
