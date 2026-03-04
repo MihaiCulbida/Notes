@@ -34,6 +34,8 @@ class TodoApp {
         this.setupEventListeners();
         this.render();
         this.updateEmptyState();
+        const toggleBtn = document.getElementById('toolbarToggleBtn');
+        if (toggleBtn) toggleBtn.style.display = 'none';
     }
 
     setupEventListeners() {
@@ -110,6 +112,25 @@ class TodoApp {
         document.getElementById('backButton').addEventListener('click', () => {
             this.navigateBack(); 
         });
+        const toggleBtn = document.getElementById('toolbarToggleBtn');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => {
+                const toolbar = document.getElementById('toolbar');
+                const icon = document.getElementById('toolbarToggleIcon');
+                const isOpen = toolbar.classList.contains('mobile-visible');
+        
+                if (isOpen) {
+                    toolbar.classList.remove('mobile-visible');
+                    icon.src = 'img/arrow-left.png';
+                    toggleBtn.style.right = '20px';
+                } else {
+                    toolbar.classList.add('mobile-visible');
+                    icon.src = 'img/arrow-right.png';
+                    const toolbarRect = toolbar.getBoundingClientRect();
+                    toggleBtn.style.right = (window.innerWidth - toolbarRect.left + 95) + 'px';
+                }
+            });
+        }
     }
 
     addContainer() {
@@ -270,14 +291,28 @@ class TodoApp {
     collapseAll() {
         this.containers.forEach(c => c.expanded = false);
         this.activeContainer = null;
+        const toggleBtn = document.getElementById('toolbarToggleBtn');
+        if (toggleBtn) {
+            toggleBtn.style.display = 'none';
+            toggleBtn.style.top = '';
+        }
+        const toolbar = document.getElementById('toolbar');
+        if (toolbar) toolbar.classList.remove('mobile-visible');
         this.updateToolbar();
     }
-
+    
     closeContainer(id) {
         const container = this.containers.find(c => c.id === id);
         if (container) {
             container.expanded = false;
             this.activeContainer = null;
+            const toggleBtn = document.getElementById('toolbarToggleBtn');
+            if (toggleBtn) {
+                toggleBtn.style.display = 'none';
+                toggleBtn.style.top = '';
+            }
+            const toolbar = document.getElementById('toolbar');
+            if (toolbar) toolbar.classList.remove('mobile-visible');
             this.render();
             this.updateToolbar();
         }
@@ -938,22 +973,44 @@ class TodoApp {
     }
     updateToolbar() {
         const toolbar = document.getElementById('toolbar');
-        
+        const toggleBtn = document.getElementById('toolbarToggleBtn');
+        const isMobile = window.innerWidth <= 768;
+    
+        if (this._toolbarTimeout) clearTimeout(this._toolbarTimeout);
+        if (this._toggleBtnTimeout) clearTimeout(this._toggleBtnTimeout);
+    
         if (this.activeContainer !== null) {
             toolbar.style.display = 'flex';
-            
-            setTimeout(() => {
+            this._toolbarTimeout = setTimeout(() => {
                 toolbar.classList.add('show');
             }, 700);
+    
+            if (toggleBtn) {
+                toggleBtn.style.display = 'none';
+                if (toggleBtn) clearTimeout(this._toggleBtnTimeout);
+                if (isMobile && this.activeContainer !== null) {
+                    this._toggleBtnTimeout = setTimeout(() => {
+                        if (this.activeContainer !== null) {
+                            toggleBtn.style.display = 'flex';
+                        }
+                    }, 750);
+                }
+            }
         } else {
             toolbar.classList.remove('show');
-            
+            toolbar.classList.remove('mobile-visible');
+    
             const textButtons = document.querySelectorAll('.toolbar-btn.text-formatting');
-            textButtons.forEach(btn => {
-                btn.classList.remove('visible');
-            });
-            
-            setTimeout(() => {
+            textButtons.forEach(btn => btn.classList.remove('visible'));
+    
+            if (toggleBtn) {
+                toggleBtn.style.display = 'none';
+                toggleBtn.style.top = '';
+                const icon = document.getElementById('toolbarToggleIcon');
+                if (icon) icon.src = 'img/arrow-left.png';
+            }
+    
+            this._toolbarTimeout = setTimeout(() => {
                 if (!this.activeContainer) {
                     toolbar.style.display = 'none';
                 }
