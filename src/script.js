@@ -131,6 +131,14 @@ class TodoApp {
                 }
             });
         }
+        window.addEventListener('resize', () => {
+        const toggleBtn = document.getElementById('toolbarToggleBtn');
+        if (toggleBtn && window.innerWidth > 768) {
+            toggleBtn.style.display = 'none';
+            const toolbar = document.getElementById('toolbar');
+            if (toolbar) toolbar.classList.remove('mobile-visible');
+        }
+    });
     }
 
     addContainer() {
