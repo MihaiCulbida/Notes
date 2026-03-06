@@ -25,4 +25,4 @@ All your notes are saved locally in your browser using localStorage. No account 
 
 
 # How to open
-Try it directly in your browser — open deployments and access the last link or go directly here https://mihaiculbida.github.io/Notes/
+Try it directly in your browser - open deployments and access the last link or go directly here https://mihaiculbida.github.io/Notes/
