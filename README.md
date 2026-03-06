@@ -1,20 +1,20 @@
 # How to Use
 
-Add a container or folder — Click the + button
+Add a container or folder - Click the + button
 
-Open a container — Click on it
+Open a container - Click on it
 
-Close a container — Click the × button
+Close a container - Click the × button
 
-Select multiple items — Long-press a container
+Select multiple items - Long-press a container
 
-Reorder items — Drag using the handle at the top
+Reorder items - Drag using the handle at the top
 
-Move into a folder — Drag and drop onto the folder
+Move into a folder - Drag and drop onto the folder
 
-Navigate back — Use the back button or breadcrumb
+Navigate back - Use the back button or breadcrumb
 
-Format text — Select text, then use the toolbar
+Format text - Select text, then use the toolbar
 
 
 # Data Storage
