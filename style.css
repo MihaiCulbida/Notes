@@ -990,25 +990,6 @@ strong {
     display: flex;
 }
 
-.toolbar-toggle-btn {
-    position: fixed;
-    border: none;
-    background: transparent;
-    box-shadow: none;
-    cursor: pointer;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 3200;
-    padding: 0;
-    width: 44px;
-    height: 44px;
-}
-.toolbar-toggle-btn img {
-    width: 40px;
-    height: 40px;
-    filter: invert(35%) sepia(30%) saturate(400%) hue-rotate(10deg) brightness(80%) contrast(90%);
-}
 @media only screen and (max-width: 1024px) {
     body {
         padding: 30px 15px;
@@ -1037,26 +1018,6 @@ strong {
     body {
         padding: 20px 10px;
     }
-    .delete-button { 
-        width: 55px; 
-        height: 55px; 
-        bottom: 20px; 
-        right: 90px; 
-    }
-    #deleteImage { 
-        width: 26px; 
-        height: 26px; 
-    }
-    .hide-content-button { 
-        width: 55px; 
-        height: 55px; 
-        bottom: 20px; 
-        right: 160px; 
-    }
-    #hideContentImage { 
-        width: 26px; 
-        height: 26px; 
-    }
     .containers-wrapper {
         gap: 12px;
         padding-top: 50px;
@@ -1083,13 +1044,13 @@ strong {
     .container.expanded {
         width: 95%;
         height: 90vh;
-        padding: 20px;
+        padding: 20px 20px 96px;
     }
     
     .add-button {
         width: 55px;
         height: 55px;
-        bottom: 20px;
+        bottom: 96px;
         right: 20px;
         font-size: 28px;
     }
@@ -1097,7 +1058,7 @@ strong {
     .delete-button {
         width: 55px;
         height: 55px;
-        bottom: 20px;
+        bottom: 96px;
         right: 90px;
     }
     
@@ -1109,7 +1070,7 @@ strong {
     .hide-content-button {
         width: 55px;
         height: 55px;
-        bottom: 20px;
+        bottom: 96px;
         right: 160px;
     }
     
@@ -1201,61 +1162,61 @@ strong {
     }
 
     .toolbar {
-        bottom: auto;
-        left: auto;
-        right: 20px;
-        top: 50%;
-        transform: translateX(100px) translateY(-50%);
-        flex-direction: column;
-        padding: 8px;
-        border-radius: 25px;
+        left: 0;
+        right: 0;
+        top: auto;
+        bottom: 0;
+        width: 100%;
+        max-width: 100%;
+        transform: translateY(110%);
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: center;
+        align-items: center;
         gap: 6px;
+        padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+        border-radius: 22px 22px 0 0;
+        border-width: 2px 0 0 0;
+        box-shadow: 0 -6px 28px rgba(230, 200, 120, 0.3);
+        overflow-x: auto;
+        overflow-y: hidden;
     }
     .toolbar.show {
-        transform: translateX(100px) translateY(-50%);
-        opacity: 0;
-        pointer-events: none;
-    }
-    .toolbar.show.mobile-visible {
-        transform: translateX(0) translateY(-50%);
+        transform: translateY(0);
         opacity: 1;
         pointer-events: all;
     }
-    .toolbar-toggle-btn {
-        right: 20px;
-        top: 50%;
-        transform: translateY(-50%);
-        transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .toolbar-toggle-btn img {
-        width: 40px;
-        height: 40px;
-    }
     .toolbar-btn { 
-        padding: 8px; 
-        width: 40px; 
-        height: 40px; 
+        flex: 0 0 auto;
+        padding: 0; 
+        width: 44px; 
+        height: 44px; 
         justify-content: center; 
     }
     .toolbar-btn .icon { 
-        height: 20px; 
-        width: 20px; 
+        height: 22px; 
+        width: 22px; 
     }
     .toolbar-btn.text-formatting:not(.visible) { 
-        height: 0; 
-        max-height: 0; 
-        padding: 0; 
-        margin: 0; 
-        opacity: 0; 
-        overflow: hidden; 
         display: none; 
     }
     .toolbar-btn.text-formatting.visible { 
         display: flex; 
-        max-height: 40px; 
-        height: 40px; 
-        padding: 8px; 
+        width: 44px;
+        height: 44px; 
+        max-height: 44px; 
+        padding: 0; 
         opacity: 1; 
+    }
+    .toolbar.format-mode .toolbar-btn:not(.text-formatting):not(.toolbar-text-btn) {
+        display: none;
+    }
+    .toolbar.format-mode .toolbar-btn.text-formatting {
+        order: 1;
+    }
+    .toolbar.format-mode .toolbar-text-btn {
+        order: 2;
+        background: linear-gradient(135deg, #FFF0C8 0%, #FFE3A3 100%);
     }
 
     .selection-cancel-btn {
@@ -1309,58 +1270,44 @@ strong {
         min-width: 140px;
     }
     .toolbar {
-        bottom: auto;
-        left: auto;
-        right: 15px;
-        top: 50%;
-        transform: translateX(100px) translateY(-50%);
-        flex-direction: column;
-        padding: 6px;
-        border-radius: 20px;
-        gap: 5px;
+        left: 0;
+        right: 0;
+        top: auto;
+        bottom: 0;
+        width: 100%;
+        max-width: 100%;
+        transform: translateY(110%);
+        flex-direction: row;
+        justify-content: center;
+        gap: 4px;
+        padding: 8px 8px calc(10px + env(safe-area-inset-bottom, 0px));
+        border-radius: 18px 18px 0 0;
     }
     .toolbar.show {
-        transform: translateX(100px) translateY(-50%);
-        opacity: 0;
-        pointer-events: none;
-    }
-    .toolbar.show.mobile-visible {
-        transform: translateX(0) translateY(-50%);
+        transform: translateY(0);
         opacity: 1;
         pointer-events: all;
     }
-    .toolbar-toggle-btn {
-        right: 20px;
-        top: 50%;
-        transform: translateY(-50%);
-    }
-    .toolbar-toggle-btn img {
-        width: 38px;
-        height: 38px;
-    }
     .toolbar-btn { 
-        padding: 7px; 
-        width: 36px; 
-        height: 36px; 
+        flex: 0 0 auto;
+        padding: 0; 
+        width: 42px; 
+        height: 42px; 
         justify-content: center; 
     }
     .toolbar-btn .icon { 
-        height: 18px; 
-        width: 18px; }
+        height: 20px; 
+        width: 20px; 
+    }
     .toolbar-btn.text-formatting:not(.visible) { 
-        position: absolute; height: 0; 
-        max-height: 0; 
-        padding: 0; 
-        margin: 0; 
-        opacity: 0; 
-        overflow: hidden; 
-        pointer-events: none; 
+        display: none; 
     }
     .toolbar-btn.text-formatting.visible { 
-        position: relative; 
-        max-height: 36px; 
-        height: 36px; 
-        padding: 7px; 
+        display: flex; 
+        width: 42px;
+        height: 42px; 
+        max-height: 42px; 
+        padding: 0; 
         opacity: 1; 
     }
 }
