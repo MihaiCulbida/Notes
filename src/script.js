@@ -32,6 +32,7 @@ class TodoApp {
         this.loadFromStorage();
         this.loadHiddenContents();
         this.setupEventListeners();
+        this.setupKeyboardAdjustment();
         this.render();
         this.updateEmptyState();
     }
