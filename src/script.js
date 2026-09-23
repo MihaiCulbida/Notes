@@ -113,35 +113,20 @@ class TodoApp {
         });
     }
 
-        setupKeyboardAdjustment() {
+    setupKeyboardAdjustment() {
         if (!window.visualViewport) return;
+        
+        const toolbar = document.getElementById('toolbar');
+        const isMobileLayout = () => window.innerWidth <= 768;
         
         const adjust = () => {
             const vv = window.visualViewport;
             const keyboardHeight = window.innerHeight - vv.height - vv.offsetTop;
-            const rawOffset = keyboardHeight > 50 ? keyboardHeight - 12 : 0;
-            const offset = rawOffset > 0 ? rawOffset : 0;
+            const offset = keyboardHeight > 50 ? keyboardHeight - 12 : 0;
             
-            const isMobileLayout = window.innerWidth <= 768;
-            const toolbar = document.getElementById('toolbar');
-            
-            if (isMobileLayout) {
-                if (toolbar.classList.contains('show')) {
-                    toolbar.style.transform = offset > 0 
-                        ? `translateY(-${offset}px)` 
-                        : 'translateY(0)';
-                } else {
-                    toolbar.style.transform = '';
-                }
-            } else {
-                if (toolbar.classList.contains('show')) {
-                    toolbar.style.transform = offset > 0 
-                        ? `translateX(-50%) translateY(-${offset}px)` 
-                        : 'translateX(-50%) translateY(0)';
-                } else {
-                    toolbar.style.transform = '';
-                }
-            }
+            toolbar.style.bottom = isMobileLayout() 
+                ? `${offset}px` 
+                : `${30 + offset}px`;
         };
         
         window.visualViewport.addEventListener('resize', adjust);
