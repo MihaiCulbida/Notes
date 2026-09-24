@@ -122,7 +122,7 @@ class TodoApp {
         const adjust = () => {
             const vv = window.visualViewport;
             const keyboardHeight = window.innerHeight - vv.height - vv.offsetTop;
-            const offset = keyboardHeight > 50 ? keyboardHeight - 12 : 0;
+            const offset = keyboardHeight > 50 ? keyboardHeight : 0;
             
             toolbar.style.bottom = isMobileLayout() 
                 ? `${offset}px` 
