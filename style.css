@@ -1173,7 +1173,7 @@ strong {
         flex-wrap: nowrap;
         justify-content: center;
         align-items: center;
-        gap: 6px;
+        gap: 10px;
         padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px));
         border-radius: 22px 22px 0 0;
         border-width: 2px 0 0 0;
@@ -1279,7 +1279,7 @@ strong {
         transform: translateY(110%);
         flex-direction: row;
         justify-content: center;
-        gap: 4px;
+        gap: 8px;
         padding: 8px 8px calc(10px + env(safe-area-inset-bottom, 0px));
         border-radius: 18px 18px 0 0;
     }
